@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Kontrol LED ESP8266</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        button { padding: 15px 30px; font-size: 20px; cursor: pointer; margin: 10px; }
+        .btn-on { background-color: #4CAF50; color: white; border: none; }
+        .btn-off { background-color: #f44336; color: white; border: none; }
+    </style>
+</head>
+<body>
+
+    <h1>Kontrol Lampu Jarak Jauh</h1>
+    <h3 id="status-text">Status: Memuat...</h3>
+
+    <button class="btn-on" onclick="ubahStatus('ON')">NYALAKAN</button>
+    <button class="btn-off" onclick="ubahStatus('OFF')">MATIKAN</button>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        // 1. Konfigurasi Firebase (Salin dari Console Firebase Anda)
+        const firebaseConfig = {
+  apiKey: "AIzaSyC2F_hlhGTtw_56NzmRQXjR43yOF68dF10",
+  authDomain: "nyalainled-cc7a7.firebaseapp.com",
+  databaseURL: "https://nyalainled-cc7a7-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "nyalainled-cc7a7",
+  storageBucket: "nyalainled-cc7a7.firebasestorage.app",
+  messagingSenderId: "525477145300",
+  appId: "1:525477145300:web:869da2da1655730d3c6941",
+  measurementId: "G-NKTJXTSG56"
+};
+
+        // 2. Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // 3. Fungsi Mengirim Data
+        function ubahStatus(kondisi) {
+            database.ref('/status_lampu').set(kondisi);
+        }
+
+        // 4. Fungsi Mendengarkan Data (Agar status di web ikut berubah real-time)
+        database.ref('/status_lampu').on('value', (snapshot) => {
+            const data = snapshot.val();
+            document.getElementById('status-text').innerText = "Status Saat Ini: " + (data || "OFF");
+        });
+    </script>
+
+</body>
+</html>
