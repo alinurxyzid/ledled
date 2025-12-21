@@ -258,11 +258,11 @@
         const doorCard = document.getElementById('door-card');
 
         if(data.status === "OPENED") {
-            doorText.innerText = "ACCESS OPENED";
+            doorText.innerText = "DOOR OPENED";
             doorIcon.className = "fas fa-door-open";
             doorCard.style.color = "#ff4d6d";
         } else {
-            doorText.innerText = "SYSTEM SECURED";
+            doorText.innerText = "DOOR CLOSED";
             doorIcon.className = "fas fa-shield-alt";
             doorCard.style.color = "#06d6a0";
         }
@@ -278,3 +278,4 @@
 </script>
 </body>
 </html>
+
