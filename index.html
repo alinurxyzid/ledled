@@ -1,54 +1,355 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Kontrol LED ESP8266</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Pro IoT Dashboard</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; }
-        button { padding: 15px 30px; font-size: 20px; cursor: pointer; margin: 10px; }
-        .btn-on { background-color: #4CAF50; color: white; border: none; }
-        .btn-off { background-color: #f44336; color: white; border: none; }
+        :root {
+            --primary: #4cc9f0;
+            --secondary: #4361ee;
+            --danger: #ff4d6d;
+            --success: #06d6a0;
+            --warning: #ffb703;
+            --bg: #0b0e14;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            background: radial-gradient(circle at top right, #1a1c2c, #0b0e14);
+            color: #fff;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+            letter-spacing: 2px;
+            margin: 0;
+            text-transform: uppercase;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            font-size: 0.75rem;
+            margin-top: 10px;
+            color: #888;
+        }
+
+        .metrics-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .metric-box {
+            background: var(--glass);
+            padding: 20px;
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .metric-box i { font-size: 1.4rem; color: var(--primary); margin-bottom: 8px; }
+        .metric-box span { display: block; font-size: 0.8rem; color: #aaa; }
+        .metric-box b { font-size: 1.5rem; display: block; margin-top: 5px; }
+
+        .main-panel {
+            background: var(--glass);
+            border-radius: 28px;
+            padding: 25px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(15px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            margin-bottom: 20px;
+        }
+
+        .door-visual {
+            text-align: center;
+            padding: 30px 0;
+            border-radius: 20px;
+            background: rgba(0,0,0,0.2);
+            margin-bottom: 25px;
+            transition: 0.5s;
+        }
+
+        .door-visual i { font-size: 3rem; margin-bottom: 12px; }
+        .door-visual div { font-weight: bold; font-size: 1.2rem; letter-spacing: 1px; }
+
+        .btn-unlock {
+            width: 100%;
+            padding: 18px;
+            border-radius: 18px;
+            border: none;
+            background: linear-gradient(45deg, var(--secondary), var(--primary));
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .btn-unlock:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+        /* Test Audio Section */
+        .audio-test-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+            border-top: 1px solid var(--glass-border);
+            padding-top: 20px;
+        }
+
+        .btn-test {
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass);
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-test.play:hover { background: var(--secondary); border-color: var(--secondary); }
+        .btn-test.stop:hover { background: var(--danger); border-color: var(--danger); }
+
+        .control-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .info h4 { margin: 0; font-size: 0.95rem; }
+        .info p { margin: 0; font-size: 0.75rem; color: #888; }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; width: 18px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
     </style>
 </head>
 <body>
 
-    <h1>Kontrol Lampu Jarak Jauh</h1>
-    <h3 id="status-text">Status: Memuat...</h3>
+<div class="container">
+    <header>
+        <h1>Smart Key System</h1>
+        <div id="conn-text" class="status-badge">
+            <i class="fas fa-circle-notch fa-spin"></i> Initializing System...
+        </div>
+    </header>
 
-    <button class="btn-on" onclick="ubahStatus('ON')">NYALAKAN</button>
-    <button class="btn-off" onclick="ubahStatus('OFF')">MATIKAN</button>
+    <div class="metrics-container">
+        <div class="metric-box">
+            <i class="fas fa-thermometer-half"></i>
+            <span>Temp</span>
+            <b id="val-temp">--°C</b>
+        </div>
+        <div class="metric-box">
+            <i class="fas fa-tint"></i>
+            <span>Humidity</span>
+            <b id="val-hum">--%</b>
+        </div>
+    </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <div class="main-panel">
+        <div id="door-card" class="door-visual">
+            <i id="door-icon" class="fas fa-lock"></i>
+            <div id="door-text">SYNCING...</div>
+        </div>
 
-    <script>
-        // 1. Konfigurasi Firebase (Salin dari Console Firebase Anda)
-        const firebaseConfig = {
-  apiKey: "AIzaSyC2F_hlhGTtw_56NzmRQXjR43yOF68dF10",
-  authDomain: "nyalainled-cc7a7.firebaseapp.com",
-  databaseURL: "https://nyalainled-cc7a7-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "nyalainled-cc7a7",
-  storageBucket: "nyalainled-cc7a7.firebasestorage.app",
-  messagingSenderId: "525477145300",
-  appId: "1:525477145300:web:869da2da1655730d3c6941",
-  measurementId: "G-NKTJXTSG56"
-};
+        <button class="btn-unlock" onclick="sendCommand(3, 'Verify Access?', 'Opening the main door remotely')">
+            <i class="fas fa-shield-alt"></i> AUTHORIZE UNLOCK
+        </button>
 
-        // 2. Inisialisasi Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        <div class="control-list">
+            <div class="control-item">
+                <div class="info">
+                    <h4>Safety Alert</h4>
+                    <p>Notify if door left open</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="switch-alert" onchange="updateFirebaseConfig('alertMode', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
 
-        // 3. Fungsi Mengirim Data
-        function ubahStatus(kondisi) {
-            database.ref('/status_lampu').set(kondisi);
+            <div class="control-item">
+                <div class="info">
+                    <h4>Adzan Sync</h4>
+                    <p>Auto-trigger prayer calls</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="switch-adzan" onchange="updateFirebaseConfig('adzanAuto', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="audio-test-grid">
+            <button class="btn-test play" onclick="sendCommand(5, 'Test Adzan?', 'Playing adzan audio track')">
+                <i class="fas fa-volume-up"></i> TEST ADZAN
+            </button>
+            <button class="btn-test stop" onclick="stopAudio()">
+                <i class="fas fa-stop-circle"></i> STOP AUDIO
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDcmkklfPbwnf_xI2Ie4bBffv_1A6Z9Nh0",
+        authDomain: "pintuiot.firebaseapp.com",
+        databaseURL: "https://pintuiot-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "pintuiot",
+        storageBucket: "pintuiot.firebasestorage.app",
+        messagingSenderId: "555761531390",
+        appId: "1:555761531390:web:d5093cf6c4dac86ba768af"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // --- REUSABLE COMMAND FUNCTION ---
+    function sendCommand(cmdValue, title, text) {
+        Swal.fire({
+            title: title,
+            text: text,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4361ee',
+            confirmButtonText: 'Execute'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                database.ref('/control/command').set(cmdValue);
+                Swal.fire({ title: 'Sent!', icon: 'success', timer: 800, showConfirmButton: false });
+            }
+        });
+    }
+
+    // --- STOP AUDIO FUNCTION ---
+    function stopAudio() {
+        // Mengirim command 0 untuk mereset/menghentikan sinyal di NodeMCU
+        database.ref('/control/command').set(0);
+        Swal.fire({ title: 'Stopped', icon: 'info', timer: 800, showConfirmButton: false });
+    }
+
+    function updateFirebaseConfig(path, value) {
+        database.ref('/config/' + path).set(value);
+    }
+
+    // --- REALTIME LISTENERS ---
+    database.ref('/sensor').on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        document.getElementById('val-temp').innerText = (data.temperature || 0).toFixed(1) + "°C";
+        document.getElementById('val-hum').innerText = (data.humidity || 0) + "%";
+        
+        const doorText = document.getElementById('door-text');
+        const doorIcon = document.getElementById('door-icon');
+        const doorCard = document.getElementById('door-card');
+
+        if(data.status === "OPENED") {
+            doorText.innerText = "DOOR OPEN";
+            doorIcon.className = "fas fa-door-open";
+            doorCard.style.color = "#ff4d6d";
+            doorCard.style.background = "rgba(255, 77, 109, 0.1)";
+        } else {
+            doorText.innerText = "SYSTEM SECURED";
+            doorIcon.className = "fas fa-lock";
+            doorCard.style.color = "#06d6a0";
+            doorCard.style.background = "rgba(6, 214, 160, 0.1)";
         }
 
-        // 4. Fungsi Mendengarkan Data (Agar status di web ikut berubah real-time)
-        database.ref('/status_lampu').on('value', (snapshot) => {
-            const data = snapshot.val();
-            document.getElementById('status-text').innerText = "Status Saat Ini: " + (data || "OFF");
-        });
-    </script>
+        const connText = document.getElementById('conn-text');
+        connText.innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i> Cloud Connected';
+    });
 
+    database.ref('/config').on('value', (snapshot) => {
+        const config = snapshot.val() || {};
+        document.getElementById('switch-alert').checked = config.alertMode || false;
+        document.getElementById('switch-adzan').checked = config.adzanAuto || false;
+    });
+
+</script>
 </body>
 </html>
