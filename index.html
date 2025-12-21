@@ -205,7 +205,7 @@
 </div>
 
 <script>
-    // --- FIREBASE CONFIG (Tetap) ---
+    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyDcmkklfPbwnf_xI2Ie4bBffv_1A6Z9Nh0",
         authDomain: "pintuiot.firebaseapp.com",
@@ -224,67 +224,62 @@
     // --- 1. CLOCK ENGINE ---
     function updateClock() {
         const now = new Date();
-        document.getElementById('live-clock').innerText = now.toLocaleTimeString('id-ID', { hour12: false, hour: '2-digit', minute: '2-digit' });
-        document.getElementById('live-date').innerText = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+        const timeStr = now.toLocaleTimeString('id-ID', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('live-clock').innerText = timeStr;
+        document.getElementById('live-date').innerText = dateStr;
+        
+        // Cek highlight sholat setiap menit
         if (now.getSeconds() === 0) highlightNextPrayer();
     }
     setInterval(updateClock, 1000);
 
-    // --- 2. PRAYER API (Metode Fetch yang Lebih Kuat) ---
-    async function getPrayerTimes() {
-        // Menggunakan API Jakarta via HTTPS agar tidak diblokir browser
-        const apiURL = "https://api.aladhan.com/v1/timingsByCity?city=Jakarta&country=Indonesia&method=11";
-        
+    // --- 2. INDEPENDENT PRAYER API ---
+    async function getPrayerTimesIndependen() {
         try {
-            const response = await fetch(apiURL);
-            if (!response.ok) throw new Error("Gagal akses server API");
+            // Mengambil berdasarkan koordinat Jakarta (Bisa diganti otomatis dengan geolocation)
+            const res = await fetch('https://api.aladhan.com/v1/timingsByCity?city=Jakarta&country=Indonesia&method=11');
+            const json = await res.json();
+            const timings = json.data.timings;
             
-            const result = await response.json();
-            const t = result.data.timings;
-            
-            // Daftar waktu yang ingin ditampilkan
-            const list = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+            const filteredPrayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
             prayerTimes = {};
 
-            list.forEach(key => {
-                const timeStr = t[key];
-                document.getElementById(`t-${key}`).innerText = timeStr;
-                prayerTimes[key] = timeStr;
+            filteredPrayers.forEach(p => {
+                document.getElementById(`t-${p}`).innerText = timings[p];
+                prayerTimes[p] = timings[p];
             });
 
-            console.log("Jadwal Sholat Berhasil Dimuat");
             highlightNextPrayer();
-
-        } catch (error) {
-            console.error("API Error:", error);
-            // Tampilkan pesan error di salah satu kotak agar user tahu
-            document.getElementById('t-Fajr').innerText = "ERR";
-            // Coba lagi dalam 10 detik
-            setTimeout(getPrayerTimes, 10000);
+        } catch (e) { 
+            console.error("Gagal mengambil jadwal sholat:", e);
         }
     }
 
     function highlightNextPrayer() {
-        if (Object.keys(prayerTimes).length === 0) return;
         const now = new Date();
         const currentMin = now.getHours() * 60 + now.getMinutes();
-        let nextP = 'Fajr';
+        
+        let nextPrayer = 'Fajr'; // Default ke subuh besok
         let minDiff = 1440;
 
         Object.keys(prayerTimes).forEach(p => {
             const [h, m] = prayerTimes[p].split(':');
-            const pMin = parseInt(h) * 60 + parseInt(m);
-            const diff = pMin - currentMin;
+            const prayerMin = parseInt(h) * 60 + parseInt(m);
+            const diff = prayerMin - currentMin;
+
             document.getElementById(`p-${p}`).classList.remove('active');
+
             if (diff > 0 && diff < minDiff) {
                 minDiff = diff;
-                nextP = p;
+                nextPrayer = p;
             }
         });
-        document.getElementById(`p-${nextP}`).classList.add('active');
+
+        document.getElementById(`p-${nextPrayer}`).classList.add('active');
     }
 
-    // --- 3. CONTROL & REALTIME DATA (TETAP) ---
+    // --- 3. CONTROL LOGIC ---
     function sendCommand(cmd, title, text) {
         Swal.fire({ title, text, icon: 'question', showCancelButton: true, confirmButtonColor: '#4361ee' }).then((r) => {
             if (r.isConfirmed) database.ref('/control/command').set(cmd);
@@ -298,6 +293,7 @@
 
     function updateConfig(path, val) { database.ref('/config/' + path).set(val); }
 
+    // --- 4. REALTIME DATA ---
     database.ref('/sensor').on('value', (snap) => {
         const data = snap.val() || {};
         document.getElementById('val-temp').innerText = (data.temperature || 0).toFixed(1) + "°C";
@@ -308,12 +304,12 @@
         const doorCard = document.getElementById('door-card');
 
         if(data.status === "OPENED") {
-            doorText.innerText = "ACCESS OPEN";
+            doorText.innerText = "DOOR OPEN";
             doorIcon.className = "fas fa-door-open";
             doorCard.style.color = "#ff4d6d";
             doorCard.style.background = "rgba(255, 77, 109, 0.1)";
         } else {
-            doorText.innerText = "SYSTEM SECURED";
+            doorText.innerText = "DOOR LOCKED";
             doorIcon.className = "fas fa-lock";
             doorCard.style.color = "#06d6a0";
             doorCard.style.background = "rgba(6, 214, 160, 0.1)";
@@ -326,9 +322,9 @@
         document.getElementById('switch-adzan').checked = config.adzanAuto || false;
     });
 
-    // Jalankan pertama kali
-    getPrayerTimes();
-    updateClock();
+    // Jalankan API sholat saat startup
+    getPrayerTimesIndependen();
+
 </script>
 </body>
 </html>
