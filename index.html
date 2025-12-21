@@ -3,144 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro IoT Dashboard | Smart Control</title>
+    <title>iSmartLock Pro Dashboard</title>
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <style>
-        :root {
-            --primary: #4cc9f0;
-            --secondary: #4361ee;
-            --danger: #ff4d6d;
-            --success: #06d6a0;
-            --bg: #0b0e14;
-            --glass: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: radial-gradient(circle at top right, #1a1c2c, #0b0e14);
-            color: #fff;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container { width: 100%; max-width: 440px; animation: fadeIn 0.8s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Clock Section */
-        .clock-section {
-            text-align: center;
-            margin-bottom: 25px;
-            background: var(--glass);
-            padding: 20px;
-            border-radius: 24px;
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(10px);
-        }
-        #live-clock { font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin: 0; color: var(--primary); }
-        #live-date { font-size: 0.9rem; color: #888; margin-top: 5px; }
-
-        /* Prayer Times Independen */
-        .prayer-card {
-            background: var(--glass);
-            border-radius: 24px;
-            padding: 15px;
-            margin-bottom: 25px;
-            border: 1px solid var(--glass-border);
-        }
-        .prayer-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-            text-align: center;
-        }
-        .prayer-item { 
-            padding: 10px 2px; 
-            background: rgba(0,0,0,0.2); 
-            border-radius: 12px; 
-            transition: all 0.3s ease;
-            border: 1px solid transparent;
-        }
-        .prayer-item span { display: block; font-size: 0.6rem; color: #aaa; text-transform: uppercase; margin-bottom: 4px; }
-        .prayer-item b { font-size: 0.8rem; color: #fff; }
-        
-        /* Highlight Waktu Sholat Selanjutnya */
-        .prayer-item.active { 
-            background: rgba(76, 201, 240, 0.2); 
-            border-color: var(--primary);
-            transform: scale(1.05);
-        }
-        .prayer-item.active b { color: var(--primary); }
-
-        /* Metrics */
-        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .metric-box {
-            background: var(--glass);
-            padding: 20px;
-            border-radius: 24px;
-            border: 1px solid var(--glass-border);
-            text-align: center;
-        }
-        .metric-box i { font-size: 1.2rem; color: var(--primary); margin-bottom: 8px; }
-        .metric-box b { font-size: 1.4rem; display: block; }
-
-        /* Main Panel */
-        .main-panel {
-            background: var(--glass);
-            border-radius: 28px;
-            padding: 25px;
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(15px);
-        }
-        .door-visual {
-            text-align: center;
-            padding: 25px 0;
-            border-radius: 20px;
-            background: rgba(0,0,0,0.2);
-            margin-bottom: 20px;
-        }
-        .door-visual i { font-size: 2.5rem; margin-bottom: 10px; }
-
-        .btn-unlock {
-            width: 100%; padding: 18px; border-radius: 18px; border: none;
-            background: linear-gradient(45deg, var(--secondary), var(--primary));
-            color: white; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 12px;
-            margin-bottom: 15px;
-            transition: 0.3s;
-        }
-        .btn-unlock:active { transform: scale(0.98); }
-
-        .audio-test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--glass-border); }
-        .btn-test {
-            padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border);
-            background: var(--glass); color: white; cursor: pointer; font-size: 0.8rem;
-        }
-        .btn-test.stop:hover { background: var(--danger); }
-
-        .switch-group {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 0; border-top: 1px solid var(--glass-border);
-        }
-        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #333; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background: var(--success); }
-        input:checked + .slider:before { transform: translateX(18px); }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
+    
+    <header class="app-header">
+        <div class="header-brand">
+            <i class="fas fa-shield-alt fa-lg"></i>
+            <div>
+                <h1>iSmartLock</h1>
+                <small>Pro System</small>
+            </div>
+        </div>
+        <div id="mcu-status" class="status-badge offline">
+            <i class="fas fa-wifi"></i>
+            <span>Offline</span>
+        </div>
+    </header>
+
     <div class="clock-section">
         <h2 id="live-clock">00:00:00</h2>
         <div id="live-date">Loading date...</div>
@@ -153,6 +42,9 @@
             <div class="prayer-item" id="p-Asr"><span>Ashar</span><b id="t-Asr">--:--</b></div>
             <div class="prayer-item" id="p-Maghrib"><span>Maghrib</span><b id="t-Maghrib">--:--</b></div>
             <div class="prayer-item" id="p-Isha"><span>Isya</span><b id="t-Isha">--:--</b></div>
+        </div>
+        <div style="text-align: center; margin-top: 10px; font-size: 0.7rem; color: #666;">
+            Data Source: Firebase Cloud (Auto Sync)
         </div>
     </div>
 
@@ -173,12 +65,12 @@
             <div id="door-text">SYSTEM SYNCING</div>
         </div>
 
-        <button class="btn-unlock" onclick="sendCommand(3, 'Verify Unlock', 'Open the door now?')">
-            <i class="fas fa-key"></i> UNLOCK
+        <button class="btn-unlock" onclick="sendCommand(3, 'Buka Pintu', 'Yakin ingin membuka pintu?')">
+            <i class="fas fa-key"></i> UNLOCK DOOR
         </button>
 
         <div class="switch-group">
-            <div><b>Alert Mode</b><br><small style="color:#666">Safety monitoring</small></div>
+            <div><b>Alert Mode</b><br><small style="color:#666">Peringatan Pintu Terbuka</small></div>
             <label class="switch">
                 <input type="checkbox" id="switch-alert" onchange="updateConfig('alertMode', this.checked)">
                 <span class="slider"></span>
@@ -186,7 +78,7 @@
         </div>
 
         <div class="switch-group">
-            <div><b>Adzan Sync</b><br><small style="color:#666">Web-to-IoT Trigger</small></div>
+            <div><b>Adzan Sync</b><br><small style="color:#666">Otomatis Bunyi Saat Adzan</small></div>
             <label class="switch">
                 <input type="checkbox" id="switch-adzan" onchange="updateConfig('adzanAuto', this.checked)">
                 <span class="slider"></span>
@@ -194,137 +86,17 @@
         </div>
 
         <div class="audio-test-grid">
-            <button class="btn-test" onclick="sendCommand(5, 'Test Adzan', 'Play adzan audio?')">
+            <button class="btn-test" onclick="sendCommand(5, 'Test Adzan', 'Bunyikan suara adzan sekarang?')">
                 <i class="fas fa-play"></i> TEST ADZAN
             </button>
-            <button class="btn-test stop" onclick="sendCommand(7, 'Stop this audio?')">
+            <button class="btn-test stop" onclick="sendCommand(7, 'Stop Audio', 'Matikan suara?')">
                 <i class="fas fa-stop"></i> STOP AUDIO
             </button>
         </div>
     </div>
 </div>
 
-<script>
-    // --- FIREBASE CONFIG ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyDcmkklfPbwnf_xI2Ie4bBffv_1A6Z9Nh0",
-        authDomain: "pintuiot.firebaseapp.com",
-        databaseURL: "https://pintuiot-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "pintuiot",
-        storageBucket: "pintuiot.firebasestorage.app",
-        messagingSenderId: "555761531390",
-        appId: "1:555761531390:web:d5093cf6c4dac86ba768af"
-    };
+<script src="script.js"></script>
 
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-
-    let prayerTimes = {};
-
-    // --- 1. CLOCK ENGINE ---
-    function updateClock() {
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString('id-ID', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-        document.getElementById('live-clock').innerText = timeStr;
-        document.getElementById('live-date').innerText = dateStr;
-        
-        // Cek highlight sholat setiap menit
-        if (now.getSeconds() === 0) highlightNextPrayer();
-    }
-    setInterval(updateClock, 1000);
-
-    // --- 2. INDEPENDENT PRAYER API ---
-    async function getPrayerTimesIndependen() {
-        try {
-            // Mengambil berdasarkan koordinat Jakarta (Bisa diganti otomatis dengan geolocation)
-            const res = await fetch('https://api.aladhan.com/v1/timingsByCity?city=Jakarta&country=Indonesia&method=11');
-            const json = await res.json();
-            const timings = json.data.timings;
-            
-            const filteredPrayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-            prayerTimes = {};
-
-            filteredPrayers.forEach(p => {
-                document.getElementById(`t-${p}`).innerText = timings[p];
-                prayerTimes[p] = timings[p];
-            });
-
-            highlightNextPrayer();
-        } catch (e) { 
-            console.error("Gagal mengambil jadwal sholat:", e);
-        }
-    }
-
-    function highlightNextPrayer() {
-        const now = new Date();
-        const currentMin = now.getHours() * 60 + now.getMinutes();
-        
-        let nextPrayer = 'Fajr'; // Default ke subuh besok
-        let minDiff = 1440;
-
-        Object.keys(prayerTimes).forEach(p => {
-            const [h, m] = prayerTimes[p].split(':');
-            const prayerMin = parseInt(h) * 60 + parseInt(m);
-            const diff = prayerMin - currentMin;
-
-            document.getElementById(`p-${p}`).classList.remove('active');
-
-            if (diff > 0 && diff < minDiff) {
-                minDiff = diff;
-                nextPrayer = p;
-            }
-        });
-
-        document.getElementById(`p-${nextPrayer}`).classList.add('active');
-    }
-
-    // --- 3. CONTROL LOGIC ---
-    function sendCommand(cmd, title, text) {
-        Swal.fire({ title, text, icon: 'question', showCancelButton: true, confirmButtonColor: '#4361ee' }).then((r) => {
-            if (r.isConfirmed) database.ref('/control/command').set(cmd);
-        });
-    }
-
-    function stopAudio() {
-        database.ref('/control/command').set(0);
-        Swal.fire({ title: 'Stopping Audio', icon: 'info', timer: 800, showConfirmButton: false });
-    }
-
-    function updateConfig(path, val) { database.ref('/config/' + path).set(val); }
-
-    // --- 4. REALTIME DATA ---
-    database.ref('/sensor').on('value', (snap) => {
-        const data = snap.val() || {};
-        document.getElementById('val-temp').innerText = (data.temperature || 0).toFixed(1) + "°C";
-        document.getElementById('val-hum').innerText = (data.humidity || 0) + "%";
-        
-        const doorText = document.getElementById('door-text');
-        const doorIcon = document.getElementById('door-icon');
-        const doorCard = document.getElementById('door-card');
-
-        if(data.status === "OPENED") {
-            doorText.innerText = "DOOR OPEN";
-            doorIcon.className = "fas fa-door-open";
-            doorCard.style.color = "#ff4d6d";
-            doorCard.style.background = "rgba(255, 77, 109, 0.1)";
-        } else {
-            doorText.innerText = "DOOR LOCKED";
-            doorIcon.className = "fas fa-lock";
-            doorCard.style.color = "#06d6a0";
-            doorCard.style.background = "rgba(6, 214, 160, 0.1)";
-        }
-    });
-
-    database.ref('/config').on('value', (snap) => {
-        const config = snap.val() || {};
-        document.getElementById('switch-alert').checked = config.alertMode || false;
-        document.getElementById('switch-adzan').checked = config.adzanAuto || false;
-    });
-
-    // Jalankan API sholat saat startup
-    getPrayerTimesIndependen();
-
-</script>
 </body>
 </html>
