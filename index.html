@@ -205,7 +205,7 @@
 </div>
 
 <script>
-    // --- FIREBASE CONFIG (Tetap Sama) ---
+    // --- FIREBASE CONFIG (Tetap) ---
     const firebaseConfig = {
         apiKey: "AIzaSyDcmkklfPbwnf_xI2Ie4bBffv_1A6Z9Nh0",
         authDomain: "pintuiot.firebaseapp.com",
@@ -224,70 +224,67 @@
     // --- 1. CLOCK ENGINE ---
     function updateClock() {
         const now = new Date();
-        const timeStr = now.toLocaleTimeString('id-ID', { hour12: false, hour: '2-digit', minute: '2-digit' });
-        const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
-        document.getElementById('live-clock').innerText = timeStr;
-        document.getElementById('live-date').innerText = dateStr;
-        
-        // Update highlight setiap detik ke-0
+        document.getElementById('live-clock').innerText = now.toLocaleTimeString('id-ID', { hour12: false, hour: '2-digit', minute: '2-digit' });
+        document.getElementById('live-date').innerText = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
         if (now.getSeconds() === 0) highlightNextPrayer();
     }
     setInterval(updateClock, 1000);
 
-    // --- 2. JADWAL SHOLAT API (Independen & Auto-Retry) ---
-    async function getPrayerTimesIndependen() {
-        // Menggunakan API Kemenag via Aladhan dengan parameter yang lebih lengkap
-        const url = `https://api.aladhan.com/v1/timingsByCity?city=Jakarta&country=Indonesia&method=11`;
+    // --- 2. PRAYER API (Metode Fetch yang Lebih Kuat) ---
+    async function getPrayerTimes() {
+        // Menggunakan API Jakarta via HTTPS agar tidak diblokir browser
+        const apiURL = "https://api.aladhan.com/v1/timingsByCity?city=Jakarta&country=Indonesia&method=11";
         
         try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error('Network response was not ok');
-            const json = await res.json();
-            const timings = json.data.timings;
+            const response = await fetch(apiURL);
+            if (!response.ok) throw new Error("Gagal akses server API");
             
-            const filteredPrayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+            const result = await response.json();
+            const t = result.data.timings;
+            
+            // Daftar waktu yang ingin ditampilkan
+            const list = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
             prayerTimes = {};
 
-            filteredPrayers.forEach(p => {
-                const time = timings[p];
-                document.getElementById(`t-${p}`).innerText = time;
-                prayerTimes[p] = time;
+            list.forEach(key => {
+                const timeStr = t[key];
+                document.getElementById(`t-${key}`).innerText = timeStr;
+                prayerTimes[key] = timeStr;
             });
 
-            console.log("Jadwal Sholat Terupdate secara mandiri");
+            console.log("Jadwal Sholat Berhasil Dimuat");
             highlightNextPrayer();
-        } catch (e) { 
-            console.error("Gagal ambil API, mencoba lagi dalam 5 detik...", e);
-            setTimeout(getPrayerTimesIndependen, 5000); // Coba lagi jika gagal
+
+        } catch (error) {
+            console.error("API Error:", error);
+            // Tampilkan pesan error di salah satu kotak agar user tahu
+            document.getElementById('t-Fajr').innerText = "ERR";
+            // Coba lagi dalam 10 detik
+            setTimeout(getPrayerTimes, 10000);
         }
     }
 
     function highlightNextPrayer() {
         if (Object.keys(prayerTimes).length === 0) return;
-
         const now = new Date();
         const currentMin = now.getHours() * 60 + now.getMinutes();
-        
-        let nextPrayer = 'Fajr';
+        let nextP = 'Fajr';
         let minDiff = 1440;
 
         Object.keys(prayerTimes).forEach(p => {
             const [h, m] = prayerTimes[p].split(':');
-            const prayerMin = parseInt(h) * 60 + parseInt(m);
-            const diff = prayerMin - currentMin;
-
+            const pMin = parseInt(h) * 60 + parseInt(m);
+            const diff = pMin - currentMin;
             document.getElementById(`p-${p}`).classList.remove('active');
-
             if (diff > 0 && diff < minDiff) {
                 minDiff = diff;
-                nextPrayer = p;
+                nextP = p;
             }
         });
-
-        document.getElementById(`p-${nextPrayer}`).classList.add('active');
+        document.getElementById(`p-${nextP}`).classList.add('active');
     }
 
-    // --- 3. CONTROL LOGIC (TETAP) ---
+    // --- 3. CONTROL & REALTIME DATA (TETAP) ---
     function sendCommand(cmd, title, text) {
         Swal.fire({ title, text, icon: 'question', showCancelButton: true, confirmButtonColor: '#4361ee' }).then((r) => {
             if (r.isConfirmed) database.ref('/control/command').set(cmd);
@@ -301,7 +298,6 @@
 
     function updateConfig(path, val) { database.ref('/config/' + path).set(val); }
 
-    // --- 4. REALTIME DATA SENSOR (TETAP) ---
     database.ref('/sensor').on('value', (snap) => {
         const data = snap.val() || {};
         document.getElementById('val-temp').innerText = (data.temperature || 0).toFixed(1) + "°C";
@@ -330,10 +326,9 @@
         document.getElementById('switch-adzan').checked = config.adzanAuto || false;
     });
 
-    // Inisialisasi
-    getPrayerTimesIndependen();
+    // Jalankan pertama kali
+    getPrayerTimes();
     updateClock();
-
 </script>
 </body>
 </html>
