@@ -19,7 +19,7 @@ const offlineThreshold = 15000; // 15 Detik toleransi offline
 // --- 1. JAM DIGITAL ---
 function updateClock() {
     const now = new Date();
-    const timeStr = now.toLocaleTimeString('id-ID', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const timeStr = now.toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     document.getElementById('live-clock').innerText = timeStr;
     document.getElementById('live-date').innerText = dateStr;
@@ -132,4 +132,5 @@ database.ref('/config').on('value', (snap) => {
     const config = snap.val() || {};
     document.getElementById('switch-alert').checked = config.alertMode || false;
     document.getElementById('switch-adzan').checked = config.adzanAuto || false;
+
 });
