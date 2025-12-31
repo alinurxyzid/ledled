@@ -190,10 +190,44 @@ input:checked + .slider:before { transform: translateX(18px); }
 .overlay.active { display: block; }
 
 /* SHEET CONTAINER */
+/* Container Tabel */
 .sheet-container {
-    width: 100%; height: 500px; 
-    border-radius: 15px; overflow: hidden; border: 1px solid var(--glass-border);
+    position: relative;
+    width: 100%;
+    height: 500px; /* Tinggi tabel */
+    border-radius: 15px;
+    border: 1px solid #ddd;
+    background: #fff;
+    
+    /* PENTING UNTUK HP: Agar bisa digeser ke samping */
+    overflow-x: auto; 
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch; /* Biar scroll di iPhone mulus */
 }
+
+/* Tampilan Cover (Tombol Muat) */
+#sheet-cover {
+    position: absolute; 
+    top: 0; left: 0; 
+    width: 100%; height: 100%; 
+    background: #f8f9fa; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    z-index: 10;
+    border-radius: 15px;
+}
+
+/* Optimasi Iframe di dalam */
+#sheet-frame {
+    width: 100%; 
+    height: 100%; 
+    border: none;
+    /* Di HP, kita paksa lebar iframe minimal 600px agar tulisan tidak gepeng */
+    min-width: 600px; 
+}
+
 .sheet-container iframe { width: 100%; height: 100%; border: none; }
 
 .btn-sheet {
