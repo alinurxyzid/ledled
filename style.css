@@ -139,3 +139,123 @@ body {
 .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
 input:checked + .slider { background: var(--success); }
 input:checked + .slider:before { transform: translateX(18px); }
+
+/* SIDEBAR STYLE */
+.sidebar {
+    position: fixed; 
+    top: 0; 
+    left: -280px; /* Dibuat lebih jauh agar bayangan tidak mengintip */
+    width: 250px; 
+    height: 100%;
+    background: #0f1219; 
+    z-index: 1000;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 20px; 
+    /* Box shadow diubah jadi 0 saat sembunyi agar tidak ada bayangan mengintip */
+    box-shadow: 0 0 0 rgba(0,0,0,0); 
+    display: flex; 
+    flex-direction: column;
+    visibility: hidden; /* Tambahkan ini agar benar-benar tidak bisa diklik saat sembunyi */
+}
+
+.sidebar.active { 
+    left: 0; 
+    box-shadow: 4px 0 15px rgba(0,0,0,0.5); /* Munculkan bayangan hanya saat aktif */
+    visibility: visible;
+}
+.sidebar-header { 
+    font-size: 1.4rem; color: var(--primary); font-weight: bold; 
+    margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 15px;
+}
+.sidebar-menu { list-style: none; padding: 0; margin: 0; }
+.sidebar-menu li {
+    padding: 12px 15px; margin-bottom: 10px; border-radius: 10px;
+    cursor: pointer; color: #aaa; transition: 0.2s; display: flex; align-items: center; gap: 10px;
+}
+.sidebar-menu li:hover, .sidebar-menu li.active-menu {
+    background: rgba(76, 201, 240, 0.1); color: var(--primary);
+}
+.sidebar-footer { margin-top: auto; font-size: 0.7rem; color: #555; text-align: center; }
+
+.btn-burger { 
+    background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; 
+}
+
+/* OVERLAY (Gelap saat menu muncul) */
+.overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 999;
+    display: none; backdrop-filter: blur(2px);
+}
+.overlay.active { display: block; }
+
+/* SHEET CONTAINER */
+.sheet-container {
+    width: 100%; height: 500px; 
+    border-radius: 15px; overflow: hidden; border: 1px solid var(--glass-border);
+}
+.sheet-container iframe { width: 100%; height: 100%; border: none; }
+
+.btn-sheet {
+    display: block; width: 100%; padding: 12px; margin-bottom: 15px;
+    background: #107c41; color: white; text-align: center; text-decoration: none;
+    border-radius: 10px; font-weight: bold;
+}
+
+/* Styling Dasar */
+.btn-google-sheet {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%; /* Default memenuhi container */
+    max-width: 300px; /* Maksimal lebar di PC */
+    margin: 0 auto 20px auto; /* Center alignment */
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    
+    /* Warna default mengikuti mode sistem (Auto Light/Dark) */
+    background-color: #107c41; 
+    color: #ffffff;
+}
+
+/* --- ELASTISITAS UKURAN (Mobile vs PC) --- */
+@media (max-width: 768px) {
+    .btn-google-sheet {
+        padding: 12px 20px;
+        font-size: 14px; /* Huruf lebih kecil di HP */
+        max-width: 100%; /* Full width di HP agar mudah di-tap */
+    }
+}
+
+.btn-google-sheet {
+    display: flex;             /* Menggunakan flex agar isi tombol (teks+ikon) di tengah */
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    /* Pengaturan Posisi Agar Presisi */
+    width: 100%;               /* Lebar penuh mengikuti area card */
+    max-width: 90%;            /* Memberi sedikit jarak (napas) di kiri-kanan */
+    margin: 0 auto 20px auto;  /* AUTO di kiri dan kanan akan memaksa tombol ke TENGAH */
+    
+    padding: 12px 20px;
+    border-radius: 10px;
+    background: #107c41;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-weight: bold;
+    box-sizing: border-box;    /* Memastikan padding tidak merusak lebar tombol */
+}
+
+/* Responsif Mobile */
+@media (max-width: 480px) {
+    .btn-google-sheet {
+        max-width: 100%;       /* Di HP, biarkan full memenuhi card */
+        border-radius: 8px;
+    }
+}
