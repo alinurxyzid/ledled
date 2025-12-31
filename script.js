@@ -205,16 +205,21 @@ database.ref('/config').on('value', (snap) => {
 function loadSheet() {
     const iframe = document.getElementById('sheet-frame');
     const cover = document.getElementById('sheet-cover');
-    const url = iframe.getAttribute('data-src'); // Ambil link asli
-
-    // Masukkan link ke src agar mulai memuat
+    
+    // 1. Ambil URL asli
+    const url = iframe.getAttribute('data-src'); 
+    
+    // 2. Masukkan ke SRC agar mulai loading
     iframe.src = url;
 
-    // Tampilkan loading sebentar, lalu hilangkan cover
-    cover.innerHTML = '<p>Sedang memuat data...</p>';
+    // 3. Efek Loading Sederhana
+    cover.innerHTML = '<div style="color:#107c41"><i class="fas fa-spinner fa-spin fa-2x"></i><br>Mengambil Data...</div>';
     
-    // Hilangkan cover setelah 1 detik (agar transisi halus)
+    // 4. Hilangkan cover setelah 2 detik (estimasi loading selesai)
     setTimeout(() => {
-        cover.style.display = 'none';
-    }, 1000);
+        cover.style.opacity = '0'; // Efek fade out
+        setTimeout(() => {
+            cover.style.display = 'none'; // Hilang total
+        }, 500);
+    }, 2000);
 }
