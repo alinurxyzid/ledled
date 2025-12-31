@@ -134,13 +134,24 @@
                     Data ini disinkronisasi otomatis dari Firebase ke Google Spreadsheet setiap 1 menit.
                 </p>
 
-                <a href="#" id="btn-open-sheet" target="_blank" class="btn-unlock btn-google-sheet">
+                <a href="https://docs.google.com/spreadsheets/d/1sY__Jbcj_fwcG3enQwQ9KNNvRpjzBLXE475j2MM6BMg/edit" id="btn-open-sheet" target="_blank" class="btn-unlock btn-google-sheet">
                     <i class="fas fa-external-link-alt"></i> 
                     <span>BUKA GOOGLE SHEET</span>
                 </a>
 
-                <div class="sheet-container">
-                    <iframe src="https://docs.google.com/spreadsheets/d/1sY__Jbcj_fwcG3enQwQ9KNNvRpjzBLXE475j2MM6BMg/edit?hl=id&gid=0#gid=0"></iframe>
+                <div class="sheet-container" style="position: relative;">
+                    <iframe id="sheet-frame" 
+                            data-src="https://docs.google.com/spreadsheets/d/1sY__Jbcj_fwcG3enQwQ9KNNvRpjzBLXE475j2MM6BMg/edit?hl=id&gid=0#gid=0"
+                            style="width: 100%; height: 100%; border: none;">
+                    </iframe>
+
+                    <div id="sheet-cover" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10;">
+                        <i class="fas fa-table" style="font-size: 3rem; color: #107c41; margin-bottom: 10px;"></i>
+                        <p style="color: #666; margin-bottom: 15px;">History Table</p>
+                        <button onclick="loadSheet()" style="padding: 10px 20px; background: #107c41; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                            <i class="fas fa-eye"></i> Muat Tabel Disini
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
