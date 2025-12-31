@@ -140,7 +140,7 @@ database.ref('/sensor').on('value', (snap) => {
     
         if (doorText && doorIcon && doorCard) {
             if(data.status === "OPENED") {
-                doorText.innerText = "DOOR OPEN";
+                doorText.innerText = "DOOR OPENED";
                 doorIcon.className = "fas fa-door-open";
                 doorCard.style.color = "#ff4d6d";
                 doorCard.style.background = "rgba(255, 77, 109, 0.1)";
@@ -201,4 +201,5 @@ database.ref('/config').on('value', (snap) => {
     if (swAdzan) swAdzan.checked = config.adzanAuto || false;
     if (swSec) swSec.checked = config.securityMode || false;
 });
+
 
