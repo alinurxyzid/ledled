@@ -139,19 +139,26 @@
                     <span>BUKA GOOGLE SHEET</span>
                 </a>
 
-                <div class="sheet-container" style="position: relative;">
+                <div class="sheet-container">
+                    
                     <iframe id="sheet-frame" 
-                            data-src="https://docs.google.com/spreadsheets/d/1sY__Jbcj_fwcG3enQwQ9KNNvRpjzBLXE475j2MM6BMg/edit?hl=id&gid=0#gid=0"
-                            style="width: 100%; height: 100%; border: none;">
+                            data-src="https://docs.google.com/spreadsheets/d/1sY__Jbcj_fwcG3enQwQ9KNNvRpjzBLXE475j2MM6BMg/preview?rm=minimal"
+                            loading="lazy">
                     </iframe>
 
-                    <div id="sheet-cover" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10;">
-                        <i class="fas fa-table" style="font-size: 3rem; color: #107c41; margin-bottom: 10px;"></i>
-                        <p style="color: #666; margin-bottom: 15px;">History Table</p>
-                        <button onclick="loadSheet()" style="padding: 10px 20px; background: #107c41; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
-                            <i class="fas fa-eye"></i> Muat Tabel Disini
+                    <div id="sheet-cover">
+                        <i class="fas fa-table" style="font-size: 3rem; color: #107c41; margin-bottom: 15px;"></i>
+                        <h4 style="margin:0; color:#333;">Data Tabel</h4>
+                        <p style="color: #666; font-size: 0.8rem; margin-bottom: 20px; text-align:center;">
+                            Klik tombol di bawah untuk memuat data.<br>
+                            (Geser ke kanan untuk melihat kolom lain)
+                        </p>
+                        
+                        <button onclick="loadSheet()" class="btn-unlock" style="width: auto; padding: 10px 30px; margin:0;">
+                            <i class="fas fa-eye"></i> TAMPILKAN TABEL
                         </button>
                     </div>
+
                 </div>
             </div>
         </div>
