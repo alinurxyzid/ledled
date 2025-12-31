@@ -202,4 +202,19 @@ database.ref('/config').on('value', (snap) => {
     if (swSec) swSec.checked = config.securityMode || false;
 });
 
+function loadSheet() {
+    const iframe = document.getElementById('sheet-frame');
+    const cover = document.getElementById('sheet-cover');
+    const url = iframe.getAttribute('data-src'); // Ambil link asli
 
+    // Masukkan link ke src agar mulai memuat
+    iframe.src = url;
+
+    // Tampilkan loading sebentar, lalu hilangkan cover
+    cover.innerHTML = '<p>Sedang memuat data...</p>';
+    
+    // Hilangkan cover setelah 1 detik (agar transisi halus)
+    setTimeout(() => {
+        cover.style.display = 'none';
+    }, 1000);
+}
