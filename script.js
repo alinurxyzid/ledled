@@ -130,7 +130,7 @@ database.ref('/sensor').on('value', (snap) => {
         const elTemp = document.getElementById('val-temp');
         const elHum = document.getElementById('val-hum');
         
-        if (elTemp) elTemp.innerText = (data.temperature || 0).toFixed(1) + "°C";
+        if (elTemp) elTemp.innerText = (data.temperature || 0).toFixed(1);
         if (elHum) elHum.innerText = (data.humidity || 0) + "%";
         
         // Visualisasi Pintu
@@ -174,7 +174,7 @@ function sendCommand(cmd, title, text) {
             if(cmd==7) aksiStr="Stop Audio (Web)";
 
             const logData = {
-                waktu: now.toLocaleTimeString('id-ID'),
+                waktu: now.toLocaleTimeString('en-GB'),
                 status: aksiStr,
                 suhu: document.getElementById('val-temp') ? document.getElementById('val-temp').innerText : "0"
             };
@@ -222,4 +222,82 @@ function loadSheet() {
             cover.style.display = 'none'; // Hilang total
         }, 500);
     }, 2000);
+}
+
+// Konfigurasi Sheet
+const SHEET_ID = '1sY__Jbcj_fwcG3enQwQ9KNNvRpjzBLXE475j2MM6BMg';
+const SHEET_GID = '0'; 
+const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
+
+function loadNativeTable() {
+    // 1. Ubah Tampilan UI (Loading Mode)
+    const btn = document.getElementById('btn-load');
+    const loadMsg = document.getElementById('loading-msg');
+    
+    btn.style.display = 'none'; // Sembunyikan tombol
+    loadMsg.style.display = 'block'; // Munculkan teks loading
+
+    // 2. Ambil Data
+    fetch(QUERY_URL)
+    .then(response => response.text())
+    .then(text => {
+        const jsonText = text.substr(47).slice(0, -2);
+        const json = JSON.parse(jsonText);
+        
+        const cols = json.table.cols;
+        const rows = json.table.rows;
+
+        // Render Header
+        let headerHtml = '';
+        cols.forEach(col => {
+            headerHtml += `<th>${col ? col.label : ''}</th>`;
+        });
+        document.getElementById('table-head').innerHTML = headerHtml;
+
+        // Render Body (Dengan Logika Regex V3)
+        let bodyHtml = '';
+        rows.forEach(row => {
+            bodyHtml += '<tr>';
+            for (let i = 0; i < cols.length; i++) {
+                const cell = row.c[i];
+                let displayValue = '';
+
+                if (cell) {
+                    if (cell.v !== null) {
+                        let raw = String(cell.v); 
+                        if (raw.includes("Date(")) {
+                            let nums = raw.match(/\d+/g); 
+                            if (nums) {
+                                let thn = parseInt(nums[0]);
+                                if (thn === 1899 && nums.length >= 6) { // Jam
+                                    displayValue = `${nums[3].padStart(2,'0')}:${nums[4].padStart(2,'0')}:${nums[5].padStart(2,'0')}`; 
+                                } else if (thn > 1900 && nums.length >= 3) { // Tanggal
+                                    // Format DD/MM/YYYY
+                                    displayValue = `${nums[2].padStart(2,'0')}/${(parseInt(nums[1])+1).toString().padStart(2,'0')}/${nums[0]}`;
+                                }
+                            }
+                        } else {
+                            displayValue = cell.f || cell.v;
+                        }
+                    }
+                }
+                bodyHtml += `<td>${displayValue}</td>`;
+            }
+            bodyHtml += '</tr>';
+        });
+        document.getElementById('table-body').innerHTML = bodyHtml;
+
+        // 3. Sukses! Hilangkan Cover dengan animasi
+        const cover = document.getElementById('sheet-cover');
+        cover.style.opacity = '0';
+        setTimeout(() => {
+            cover.style.display = 'none';
+        }, 500);
+
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        loadMsg.innerHTML = '<span style="color:red"><i class="fas fa-exclamation-triangle"></i> Gagal memuat data. Periksa koneksi.</span>';
+        btn.style.display = 'inline-block'; // Munculkan tombol lagi biar bisa retry
+    });
 }
