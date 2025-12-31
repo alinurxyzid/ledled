@@ -164,27 +164,24 @@ function sendCommand(cmd, title, text) {
         background: '#1a1c2c', color: '#fff'
     }).then((r) => {
         if (r.isConfirmed) {
-            // 1. Kirim Perintah ke Alat
             database.ref('/control/command').set(cmd);
             
-            // 2. Siapkan Data Log
+            // Log Manual ke History (Pending Queue)
             const now = new Date();
             let aksiStr = "Command Web";
             if(cmd==3) aksiStr="Buka Pintu (Web)";
             if(cmd==5) aksiStr="Test Adzan (Web)";
             if(cmd==7) aksiStr="Stop Audio (Web)";
 
-            // --- MULAI BAGIAN YANG DIUBAH ---
-            
             // A. Ambil teks suhu asli (Misal: "27.5 °C")
             let rawTemp = document.getElementById('val-temp') ? document.getElementById('val-temp').innerText : "0";
+
             let cleanTemp = rawTemp.replace(/[^\d.]/g, '');
 
             const logData = {
-                waktu: now.toLocaleString('en-GB'), 
-                
+                waktu: now.toLocaleTimeString('en-GB', { hour12: false }),
                 status: aksiStr,
-                suhu: cleanTemp 
+                suhu: cleanTemp
             };
             database.ref('/logs_pending').push(logData);
 
