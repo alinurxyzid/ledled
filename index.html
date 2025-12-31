@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,89 +14,140 @@
 </head>
 <body>
 
-<div class="container">
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-shield-alt"></i> iSmartLock
+        </div>
+        <ul class="sidebar-menu">
+            <li onclick="showPage('dashboard')" class="active-menu" id="menu-dash">
+                <i class="fas fa-home"></i> Dashboard
+            </li>
+            <li onclick="showPage('history')" id="menu-hist">
+                <i class="fas fa-table"></i> Log History
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            System Ver 3.0<br>
+            Connected to Firebase
+        </div>
+    </div>
     
-    <header class="app-header">
-        <div class="header-brand">
-            <i class="fas fa-shield-alt fa-lg"></i>
-            <div>
-                <h1>iSmartLock</h1>
-                <small>Pro System</small>
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="container">
+        
+        <header class="app-header">
+            <div style="display:flex; align-items:center; gap:15px">
+                <button class="btn-burger" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <div class="header-brand">
+                    <h1>iSmartLock</h1>
+                </div>
+            </div>
+            <div id="mcu-status" class="status-badge offline">
+                <i class="fas fa-wifi"></i> <span>Offline</span>
+            </div>
+        </header>
+
+        <div id="page-dashboard" class="page-section active">
+            
+            <div class="clock-section">
+                <h2 id="live-clock">00:00:00</h2>
+                <div id="live-date">Memuat Tanggal...</div>
+            </div>
+
+            <div class="prayer-card">
+                <div class="prayer-grid">
+                    <div class="prayer-item" id="p-Fajr"><span>Subuh</span><b id="t-Fajr">--:--</b></div>
+                    <div class="prayer-item" id="p-Dhuhr"><span>Dzuhur</span><b id="t-Dhuhr">--:--</b></div>
+                    <div class="prayer-item" id="p-Asr"><span>Ashar</span><b id="t-Asr">--:--</b></div>
+                    <div class="prayer-item" id="p-Maghrib"><span>Maghrib</span><b id="t-Maghrib">--:--</b></div>
+                    <div class="prayer-item" id="p-Isha"><span>Isya</span><b id="t-Isha">--:--</b></div>
+                </div>
+                <div style="text-align: center; margin-top: 10px; font-size: 0.6rem; color: #666;">
+                    Data Source: MyQuran API via Firebase
+                </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-box">
+                    <i class="fas fa-thermometer-half"></i>
+                    <b id="val-temp">--°C</b>
+                </div>
+                <div class="metric-box">
+                    <i class="fas fa-tint"></i>
+                    <b id="val-hum">--%</b>
+                </div>
+            </div>
+
+            <div class="main-panel">
+                <div id="door-card" class="door-visual">
+                    <i id="door-icon" class="fas fa-door-closed"></i>
+                    <div id="door-text">SYSTEM READY</div>
+                </div>
+
+                <button class="btn-unlock" onclick="sendCommand(3, 'Buka Pintu', 'Yakin ingin membuka pintu?')">
+                    <i class="fas fa-key"></i> UNLOCK DOOR
+                </button>
+
+                <div class="switch-group">
+                    <div><b>Alert Mode</b><br><small style="color:#666">Bunyi jika pintu terbuka lama</small></div>
+                    <label class="switch">
+                        <input type="checkbox" id="switch-alert" onchange="updateConfig('alertMode', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-group">
+                    <div><b>Security Alarm</b><br><small style="color:#ff4d6d">SIRENE MALING</small></div>
+                    <label class="switch">
+                        <input type="checkbox" id="switch-security" onchange="updateConfig('securityMode', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="switch-group">
+                    <div><b>Adzan Sync</b><br><small style="color:#666">Otomatis Bunyi Saat Adzan</small></div>
+                    <label class="switch">
+                        <input type="checkbox" id="switch-adzan" onchange="updateConfig('adzanAuto', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="audio-test-grid">
+                    <button class="btn-test" onclick="sendCommand(5, 'Test Adzan', 'Bunyikan suara adzan sekarang?')">
+                        <i class="fas fa-play"></i> TEST ADZAN
+                    </button>
+                    <button class="btn-test stop" onclick="sendCommand(7, 'Stop Audio', 'Matikan suara?')">
+                        <i class="fas fa-stop"></i> STOP AUDIO
+                    </button>
+                </div>
             </div>
         </div>
-        <div id="mcu-status" class="status-badge offline">
-            <i class="fas fa-wifi"></i>
-            <span>Offline</span>
-        </div>
-    </header>
 
-    <div class="clock-section">
-        <h2 id="live-clock">00:00:00</h2>
-        <div id="live-date">Loading date...</div>
+        <div id="page-history" class="page-section" style="display:none;">
+            <div class="main-panel" style="min-height: 600px;">
+                <h3 style="color:var(--primary); margin-bottom:15px;">
+                    <i class="fas fa-history"></i> Riwayat Akses
+                </h3>
+                
+                <p style="font-size:0.8rem; color:#aaa; margin-bottom:20px;">
+                    Data ini disinkronisasi otomatis dari Firebase ke Google Spreadsheet setiap 1 menit.
+                </p>
+
+                <a href="#" id="btn-open-sheet" target="_blank" class="btn-unlock btn-google-sheet">
+                    <i class="fas fa-external-link-alt"></i> 
+                    <span>BUKA GOOGLE SHEET</span>
+                </a>
+
+                <div class="sheet-container">
+                    <iframe src="https://docs.google.com/spreadsheets/d/1sY__Jbcj_fwcG3enQwQ9KNNvRpjzBLXE475j2MM6BMg/edit?hl=id&gid=0#gid=0"></iframe>
+                </div>
+            </div>
+        </div>
+
     </div>
-
-    <div class="prayer-card">
-        <div class="prayer-grid">
-            <div class="prayer-item" id="p-Fajr"><span>Subuh</span><b id="t-Fajr">--:--</b></div>
-            <div class="prayer-item" id="p-Dhuhr"><span>Dzuhur</span><b id="t-Dhuhr">--:--</b></div>
-            <div class="prayer-item" id="p-Asr"><span>Ashar</span><b id="t-Asr">--:--</b></div>
-            <div class="prayer-item" id="p-Maghrib"><span>Maghrib</span><b id="t-Maghrib">--:--</b></div>
-            <div class="prayer-item" id="p-Isha"><span>Isya</span><b id="t-Isha">--:--</b></div>
-        </div>
-        <div style="text-align: center; margin-top: 10px; font-size: 0.7rem; color: #666;">
-            Data Source: Firebase Cloud (Auto Sync)
-        </div>
-    </div>
-
-    <div class="metrics-grid">
-        <div class="metric-box">
-            <i class="fas fa-thermometer-half"></i>
-            <b id="val-temp">--°C</b>
-        </div>
-        <div class="metric-box">
-            <i class="fas fa-tint"></i>
-            <b id="val-hum">--%</b>
-        </div>
-    </div>
-
-    <div class="main-panel">
-        <div id="door-card" class="door-visual">
-            <i id="door-icon" class="fas fa-lock"></i>
-            <div id="door-text">SYSTEM SYNCING</div>
-        </div>
-
-        <button class="btn-unlock" onclick="sendCommand(3, 'Buka Pintu', 'Yakin ingin membuka pintu?')">
-            <i class="fas fa-key"></i> UNLOCK DOOR
-        </button>
-
-        <div class="switch-group">
-            <div><b>Alert Mode</b><br><small style="color:#666">Peringatan Pintu Terbuka</small></div>
-            <label class="switch">
-                <input type="checkbox" id="switch-alert" onchange="updateConfig('alertMode', this.checked)">
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="switch-group">
-            <div><b>Adzan Sync</b><br><small style="color:#666">Otomatis Bunyi Saat Adzan</small></div>
-            <label class="switch">
-                <input type="checkbox" id="switch-adzan" onchange="updateConfig('adzanAuto', this.checked)">
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="audio-test-grid">
-            <button class="btn-test" onclick="sendCommand(5, 'Test Adzan', 'Bunyikan suara adzan sekarang?')">
-                <i class="fas fa-play"></i> TEST ADZAN
-            </button>
-            <button class="btn-test stop" onclick="sendCommand(7, 'Stop Audio', 'Matikan suara?')">
-                <i class="fas fa-stop"></i> STOP AUDIO
-            </button>
-        </div>
-    </div>
-</div>
-
-<script src="script.js"></script>
+    
+    <script src="script.js"></script>
 
 </body>
 </html>
