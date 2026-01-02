@@ -169,9 +169,9 @@ function sendCommand(cmd, title, text) {
             // Log Manual ke History (Pending Queue)
             const now = new Date();
             let aksiStr = "Command Web";
-            if(cmd==3) aksiStr="Buka Pintu (Web)";
-            if(cmd==5) aksiStr="Test Adzan (Web)";
-            if(cmd==7) aksiStr="Stop Audio (Web)";
+            if(cmd==1) aksiStr="Buka Pintu (Web)";
+            if(cmd==3) aksiStr="Test Adzan (Web)";
+            if(cmd==4) aksiStr="Stop Audio (Web)";
 
             // A. Ambil teks suhu asli (Misal: "27.5 °C")
             let rawTemp = document.getElementById('val-temp') ? document.getElementById('val-temp').innerText : "0";
@@ -201,10 +201,21 @@ database.ref('/config').on('value', (snap) => {
     const swAlert = document.getElementById('switch-alert');
     const swAdzan = document.getElementById('switch-adzan');
     const swSec = document.getElementById('switch-security');
+    const swAccess = document.getElementById('switch-access'); // Tambahkan ini
+    const statusText = document.getElementById('access-status-text');
     
     if (swAlert) swAlert.checked = config.alertMode || false;
     if (swAdzan) swAdzan.checked = config.adzanAuto || false;
     if (swSec) swSec.checked = config.securityMode || false;
+    
+    // Update Switch Disable Access
+    if (swAccess) {
+        swAccess.checked = config.accessCardDisabled || false;
+        if (statusText) {
+            statusText.innerText = swAccess.checked ? "Sensor kartu sedang DIMATIKAN" : "Sensor kartu sedang AKTIF";
+            statusText.style.color = swAccess.checked ? "#ff4d6d" : "#666";
+        }
+    }
 });
 
 function loadSheet() {
@@ -304,5 +315,35 @@ function loadNativeTable() {
         console.error('Error:', error);
         loadMsg.innerHTML = '<span style="color:red"><i class="fas fa-exclamation-triangle"></i> Gagal memuat data. Periksa koneksi.</span>';
         btn.style.display = 'inline-block'; // Munculkan tombol lagi biar bisa retry
+    });
+}
+
+function toggleAccess(isDisableMode) {
+    // isDisableMode = true berarti switch ON (Disable Access Aktif)
+    const cmdID = isDisableMode ? 6 : 7; 
+    const statusText = document.getElementById('access-status-text');
+
+    // 1. Kirim Perintah ke Arduino via Firebase
+    database.ref('/control/command').set(cmdID);
+    
+    // 2. Simpan status ke config agar UI sinkron
+    database.ref('/config/accessCardDisabled').set(isDisableMode);
+
+    // 3. Update teks bantuan
+    if (statusText) {
+        statusText.innerText = isDisableMode ? "Sensor kartu sedang DIMATIKAN" : "Sensor kartu sedang AKTIF";
+        statusText.style.color = isDisableMode ? "#ff4d6d" : "#666";
+    }
+
+    // Notifikasi Toast
+    Swal.fire({
+        icon: isDisableMode ? 'warning' : 'success',
+        title: isDisableMode ? 'Akses Kartu Dimatikan' : 'Akses Kartu Diaktifkan',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+        background: '#1a1c2c',
+        color: '#fff'
     });
 }
