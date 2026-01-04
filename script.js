@@ -27,20 +27,26 @@ function toggleSidebar() {
     if(ov) ov.classList.toggle('active');
 }
 
+// --- MODIFIKASI NAVIGASI & AUTO REFRESH ---
 function showPage(pageName) {
-    // Sembunyikan semua halaman
+    // 1. Sembunyikan semua halaman
     document.querySelectorAll('.page-section').forEach(el => el.style.display = 'none');
     
-    // Tampilkan halaman target
+    // 2. Tampilkan halaman target
     const target = document.getElementById('page-' + pageName);
     if (target) target.style.display = 'block';
 
-    // Update Menu Aktif
+    // 3. Update Menu Aktif di Sidebar
     document.querySelectorAll('.sidebar-menu li').forEach(el => el.classList.remove('active-menu'));
     const menu = document.getElementById(pageName === 'dashboard' ? 'menu-dash' : 'menu-hist');
     if (menu) menu.classList.add('active-menu');
 
-    // Tutup sidebar jika di HP (Mobile UX)
+    // 4. FITUR: Auto-Refresh jika buka Log History
+    if (pageName === 'history') {
+        loadNativeTable(); // Panggil fungsi load saat pindah halaman
+    }
+
+    // 5. Tutup sidebar otomatis (Mobile UX)
     const sb = document.getElementById('sidebar');
     if (sb && sb.classList.contains('active')) toggleSidebar();
 }
@@ -249,11 +255,19 @@ function loadNativeTable() {
     // 1. Ubah Tampilan UI (Loading Mode)
     const btn = document.getElementById('btn-load');
     const loadMsg = document.getElementById('loading-msg');
+    const tableArea = document.querySelector('.table-scroll-area'); // Target scroll
+    const cover = document.getElementById('sheet-cover');
     
-    btn.style.display = 'none'; // Sembunyikan tombol
-    loadMsg.style.display = 'block'; // Munculkan teks loading
+    if (btn) btn.style.display = 'none'; 
+    if (loadMsg) loadMsg.style.display = 'block';
+    
+    // Tampilkan cover loading jika ada
+    if (cover) {
+        cover.style.display = 'flex';
+        cover.style.opacity = '1';
+    }
 
-    // 2. Ambil Data
+    // 2. Ambil Data dari Google Sheets
     fetch(QUERY_URL)
     .then(response => response.text())
     .then(text => {
@@ -270,7 +284,7 @@ function loadNativeTable() {
         });
         document.getElementById('table-head').innerHTML = headerHtml;
 
-        // Render Body (Dengan Logika Regex V3)
+        // Render Body
         let bodyHtml = '';
         rows.forEach(row => {
             bodyHtml += '<tr>';
@@ -285,10 +299,9 @@ function loadNativeTable() {
                             let nums = raw.match(/\d+/g); 
                             if (nums) {
                                 let thn = parseInt(nums[0]);
-                                if (thn === 1899 && nums.length >= 6) { // Jam
+                                if (thn === 1899 && nums.length >= 6) { 
                                     displayValue = `${nums[3].padStart(2,'0')}:${nums[4].padStart(2,'0')}:${nums[5].padStart(2,'0')}`; 
-                                } else if (thn > 1900 && nums.length >= 3) { // Tanggal
-                                    // Format DD/MM/YYYY
+                                } else if (thn > 1900 && nums.length >= 3) { 
                                     displayValue = `${nums[2].padStart(2,'0')}/${(parseInt(nums[1])+1).toString().padStart(2,'0')}/${nums[0]}`;
                                 }
                             }
@@ -303,18 +316,29 @@ function loadNativeTable() {
         });
         document.getElementById('table-body').innerHTML = bodyHtml;
 
-        // 3. Sukses! Hilangkan Cover dengan animasi
-        const cover = document.getElementById('sheet-cover');
-        cover.style.opacity = '0';
+        // --- FITUR AUTO-SCROLL KE BAWAH ---
+        // Gunakan setTimeout agar scroll berjalan setelah tabel selesai dirender browser
         setTimeout(() => {
-            cover.style.display = 'none';
-        }, 500);
+            if (tableArea) {
+                tableArea.scrollTo({
+                    top: tableArea.scrollHeight,
+                    behavior: 'smooth' // Scroll halus ke paling bawah
+                });
+            }
+        }, 300);
+
+        // 3. Selesai: Hilangkan Loading UI
+        if (loadMsg) loadMsg.style.display = 'none';
+        if (cover) {
+            cover.style.opacity = '0';
+            setTimeout(() => { cover.style.display = 'none'; }, 500);
+        }
 
     })
     .catch(error => {
         console.error('Error:', error);
-        loadMsg.innerHTML = '<span style="color:red"><i class="fas fa-exclamation-triangle"></i> Gagal memuat data. Periksa koneksi.</span>';
-        btn.style.display = 'inline-block'; // Munculkan tombol lagi biar bisa retry
+        if (loadMsg) loadMsg.innerHTML = '<span style="color:red"><i class="fas fa-exclamation-triangle"></i> Gagal memuat data.</span>';
+        if (btn) btn.style.display = 'inline-block';
     });
 }
 
