@@ -144,23 +144,25 @@ input:checked + .slider:before { transform: translateX(18px); }
 .sidebar {
     position: fixed; 
     top: 0; 
-    left: -280px; /* Dibuat lebih jauh agar bayangan tidak mengintip */
+    left: 0;
     width: 250px; 
     height: 100%;
     background: #0f1219; 
     z-index: 1000;
-    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Gunakan translateX untuk performa lebih ringan dibanding mengubah nilai 'left' */
+    transform: translateX(-100%); 
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 20px; 
-    /* Box shadow diubah jadi 0 saat sembunyi agar tidak ada bayangan mengintip */
-    box-shadow: 0 0 0 rgba(0,0,0,0); 
     display: flex; 
     flex-direction: column;
-    visibility: hidden; /* Tambahkan ini agar benar-benar tidak bisa diklik saat sembunyi */
+    visibility: hidden;
+    /* Beritahu browser untuk bersiap melakukan transformasi */
+    will-change: transform; 
 }
 
 .sidebar.active { 
-    left: 0; 
-    box-shadow: 4px 0 15px rgba(0,0,0,0.5); /* Munculkan bayangan hanya saat aktif */
+    transform: translateX(0);
+    box-shadow: 4px 0 15px rgba(0,0,0,0.5);
     visibility: visible;
 }
 .sidebar-header { 
@@ -183,11 +185,21 @@ input:checked + .slider:before { transform: translateX(18px); }
 
 /* OVERLAY (Gelap saat menu muncul) */
 .overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5); z-index: 999;
-    display: none; backdrop-filter: blur(2px);
+    position: fixed; 
+    top: 0; left: 0; 
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); 
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(2px);
 }
-.overlay.active { display: block; }
+
+.overlay.active { 
+    opacity: 1;
+    visibility: visible;
+}
 
 /* SHEET CONTAINER */
 /* Container Utama */
