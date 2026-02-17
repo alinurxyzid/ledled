@@ -1,22 +1,51 @@
 :root {
-    --primary: #4cc9f0;
-    --secondary: #4361ee;
-    --danger: #ff4d6d;
-    --success: #06d6a0;
-    --bg: #0b0e14;
-    --glass: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.1);
+    --primary: #00b894; /* Hijau Ramadhan */
+    --secondary: #f1c40f; /* Emas Cerah */
+    --danger: #d63031;
+    --success: #00b894;
+    --bg: #f4f7f6; /* Putih Bersih (White Smoke) */
+    --text: #2d3436; /* Teks Gelap */
+    --glass: rgba(255, 255, 255, 0.9); /* Glass Putih */
+    --glass-border: rgba(0, 184, 148, 0.2);
+    --shadow: 0 10px 30px rgba(0, 184, 148, 0.15);
 }
 
 body {
     font-family: 'Inter', sans-serif;
-    background: radial-gradient(circle at top right, #1a1c2c, #0b0e14);
-    color: #fff;
+    background: var(--bg);
+    color: var(--text);
     margin: 0;
     display: flex;
     justify-content: center;
     min-height: 100vh;
     padding: 20px;
+    /* Pattern Nuansa Islami Halus */
+    background-image: radial-gradient(#00b894 0.5px, transparent 0.5px), radial-gradient(#00b894 0.5px, var(--bg) 0.5px);
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
+}
+
+/* --- ANIMASI RAMADHAN (Lampion Gantung) --- */
+@keyframes swing {
+    0% { transform: rotate(3deg); }
+    50% { transform: rotate(-3deg); }
+    100% { transform: rotate(3deg); }
+}
+
+body::after {
+    content: "\f699"; /* Icon Bulan Sabit & Bintang (Star and Crescent) */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    position: fixed;
+    top: -15px;
+    right: 30px;
+    font-size: 80px;
+    color: var(--secondary);
+    opacity: 0.8;
+    transform-origin: top center;
+    animation: swing 4s ease-in-out infinite;
+    z-index: -1;
+    text-shadow: 0 10px 20px rgba(241, 196, 15, 0.4);
 }
 
 .container { width: 100%; max-width: 440px; animation: fadeIn 0.8s ease-out; }
@@ -33,17 +62,17 @@ body {
     border-radius: 24px;
     border: 1px solid var(--glass-border);
     backdrop-filter: blur(10px);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    box-shadow: var(--shadow);
 }
 
 .header-brand { display: flex; align-items: center; gap: 12px; }
 .header-brand i { color: var(--primary); filter: drop-shadow(0 0 5px var(--primary)); }
 .header-brand h1 {
     margin: 0; font-size: 1.2rem; font-weight: 800; letter-spacing: 0.5px;
-    background: linear-gradient(45deg, #fff, var(--primary));
+    background: linear-gradient(45deg, var(--primary), #0984e3);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
-.header-brand small { color: #888; font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; }
+.header-brand small { color: #636e72; font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; }
 
 /* Status Badge */
 .status-badge {
@@ -70,46 +99,50 @@ body {
     text-align: center; margin-bottom: 25px; background: var(--glass);
     padding: 20px; border-radius: 24px; border: 1px solid var(--glass-border);
     backdrop-filter: blur(10px);
+    box-shadow: var(--shadow);
 }
 #live-clock { font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin: 0; color: var(--primary); }
-#live-date { font-size: 0.9rem; color: #888; margin-top: 5px; }
+#live-date { font-size: 0.9rem; color: #636e72; margin-top: 5px; }
 
 /* Prayer Times */
 .prayer-card {
     background: var(--glass); border-radius: 24px; padding: 15px;
     margin-bottom: 25px; border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow);
 }
 .prayer-grid {
     display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; text-align: center;
 }
 .prayer-item { 
-    padding: 10px 2px; background: rgba(0,0,0,0.2); border-radius: 12px; 
+    padding: 10px 2px; background: rgba(0, 184, 148, 0.05); border-radius: 12px; 
     transition: all 0.3s ease; border: 1px solid transparent;
 }
-.prayer-item span { display: block; font-size: 0.6rem; color: #aaa; text-transform: uppercase; margin-bottom: 4px; }
-.prayer-item b { font-size: 0.8rem; color: #fff; }
+.prayer-item span { display: block; font-size: 0.6rem; color: #636e72; text-transform: uppercase; margin-bottom: 4px; }
+.prayer-item b { font-size: 0.8rem; color: var(--text); }
 .prayer-item.active { 
-    background: rgba(76, 201, 240, 0.2); border-color: var(--primary); transform: scale(1.05);
+    background: var(--primary); border-color: var(--primary); transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 184, 148, 0.3);
 }
-.prayer-item.active b { color: var(--primary); }
+.prayer-item.active b { color: #fff; }
+.prayer-item.active span { color: rgba(255,255,255,0.9); }
 
 /* Metrics */
 .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
 .metric-box {
     background: var(--glass); padding: 20px; border-radius: 24px;
-    border: 1px solid var(--glass-border); text-align: center;
+    border: 1px solid var(--glass-border); text-align: center; box-shadow: var(--shadow);
 }
 .metric-box i { font-size: 1.2rem; color: var(--primary); margin-bottom: 8px; }
-.metric-box b { font-size: 1.4rem; display: block; }
+.metric-box b { font-size: 1.4rem; display: block; color: var(--text); }
 
 /* Main Panel */
 .main-panel {
     background: var(--glass); border-radius: 28px; padding: 25px;
-    border: 1px solid var(--glass-border); backdrop-filter: blur(15px);
+    border: 1px solid var(--glass-border); backdrop-filter: blur(15px); box-shadow: var(--shadow);
 }
 .door-visual {
     text-align: center; padding: 25px 0; border-radius: 20px;
-    background: rgba(0,0,0,0.2); margin-bottom: 20px;
+    background: rgba(0,0,0,0.03); margin-bottom: 20px; color: var(--text);
 }
 .door-visual i { font-size: 2.5rem; margin-bottom: 10px; }
 
@@ -125,9 +158,9 @@ body {
 .audio-test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--glass-border); }
 .btn-test {
     padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border);
-    background: var(--glass); color: white; cursor: pointer; font-size: 0.8rem;
+    background: white; color: var(--text); cursor: pointer; font-size: 0.8rem;
 }
-.btn-test.stop:hover { background: var(--danger); }
+.btn-test.stop:hover { background: var(--danger); color: white; }
 
 .switch-group {
     display: flex; justify-content: space-between; align-items: center;
@@ -135,8 +168,8 @@ body {
 }
 .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
 .switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #333; transition: .4s; border-radius: 34px; }
-.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: .4s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 input:checked + .slider { background: var(--success); }
 input:checked + .slider:before { transform: translateX(18px); }
 
@@ -147,7 +180,7 @@ input:checked + .slider:before { transform: translateX(18px); }
     left: 0;
     width: 250px; 
     height: 100%;
-    background: #0f1219; 
+    background: #ffffff; 
     z-index: 1000;
     /* Gunakan translateX untuk performa lebih ringan dibanding mengubah nilai 'left' */
     transform: translateX(-100%); 
@@ -158,29 +191,30 @@ input:checked + .slider:before { transform: translateX(18px); }
     visibility: hidden;
     /* Beritahu browser untuk bersiap melakukan transformasi */
     will-change: transform; 
+    border-right: 1px solid #eee;
 }
 
 .sidebar.active { 
     transform: translateX(0);
-    box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+    box-shadow: 4px 0 15px rgba(0,0,0,0.1);
     visibility: visible;
 }
 .sidebar-header { 
     font-size: 1.4rem; color: var(--primary); font-weight: bold; 
-    margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 15px;
+    margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 15px;
 }
 .sidebar-menu { list-style: none; padding: 0; margin: 0; }
 .sidebar-menu li {
     padding: 12px 15px; margin-bottom: 10px; border-radius: 10px;
-    cursor: pointer; color: #aaa; transition: 0.2s; display: flex; align-items: center; gap: 10px;
+    cursor: pointer; color: #636e72; transition: 0.2s; display: flex; align-items: center; gap: 10px;
 }
 .sidebar-menu li:hover, .sidebar-menu li.active-menu {
-    background: rgba(76, 201, 240, 0.1); color: var(--primary);
+    background: rgba(0, 184, 148, 0.1); color: var(--primary);
 }
-.sidebar-footer { margin-top: auto; font-size: 0.7rem; color: #555; text-align: center; }
+.sidebar-footer { margin-top: auto; font-size: 0.7rem; color: #999; text-align: center; }
 
 .btn-burger { 
-    background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; 
+    background: none; border: none; color: var(--text); font-size: 1.2rem; cursor: pointer; 
 }
 
 /* OVERLAY (Gelap saat menu muncul) */
@@ -386,4 +420,35 @@ input:checked + .slider:before { transform: translateX(18px); }
 
 .custom-table tr:nth-child(even) {
     background-color: #f9f9f9; /* Warna selang-seling */
+}
+
+/* --- RAMADHAN GREETING --- */
+.ramadhan-greeting {
+    text-align: center;
+    margin: -5px 0 25px 0;
+    position: relative;
+    z-index: 2;
+    animation: fadeIn 1s ease-out;
+}
+.ramadhan-greeting h2 {
+    font-family: 'Georgia', serif;
+    font-size: 1.35rem;
+    margin: 0;
+    background: linear-gradient(to right, var(--primary), #006266);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: bold;
+    line-height: 1.3;
+}
+.ramadhan-greeting .sub-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    color: var(--secondary);
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 6px;
+    display: inline-block;
+    border-bottom: 1px solid rgba(241, 196, 15, 0.3);
+    padding-bottom: 4px;
 }
