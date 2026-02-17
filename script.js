@@ -17,6 +17,7 @@ const database = firebase.database();
 // --- VARIABEL GLOBAL ---
 let prayerTimes = {};
 let lastMcuUpdate = 0;
+let currentSensorData = {}; // Menyimpan data sensor mentah dari Firebase
 const offlineThreshold = 15000; // 15 Detik toleransi offline
 
 // --- 1. NAVIGASI SIDEBAR & HALAMAN ---
@@ -70,6 +71,20 @@ database.ref('/jadwal').on('value', (snap) => {
     if (jadwal) {
         const map = { 'subuh': 'Fajr', 'dzuhur': 'Dhuhr', 'ashar': 'Asr', 'maghrib': 'Maghrib', 'isya': 'Isha' };
         prayerTimes = {};
+        
+        // --- FITUR RAMADHAN: Hitung & Tampilkan Imsak ---
+        if (jadwal['subuh']) {
+            // Hitung Imsak (Subuh - 10 Menit)
+            let [h, m] = jadwal['subuh'].split(':').map(Number);
+            let imsakMins = (h * 60 + m) - 10;
+            if (imsakMins < 0) imsakMins += 1440;
+            let imsakH = Math.floor(imsakMins / 60).toString().padStart(2, '0');
+            let imsakM = (imsakMins % 60).toString().padStart(2, '0');
+            let imsakTime = `${imsakH}:${imsakM}`;
+
+            injectImsakDisplay(imsakTime); // Tampilkan di UI
+            prayerTimes['Imsak'] = imsakTime;
+        }
 
         for (const [indoKey, htmlKey] of Object.entries(map)) {
             if (jadwal[indoKey]) {
@@ -81,6 +96,25 @@ database.ref('/jadwal').on('value', (snap) => {
         highlightNextPrayer();
     }
 });
+
+// Fungsi Injeksi Tampilan Imsak (Agar tidak perlu edit HTML manual)
+function injectImsakDisplay(time) {
+    const grid = document.querySelector('.prayer-grid');
+    if (grid && !document.getElementById('p-Imsak')) {
+        const div = document.createElement('div');
+        div.className = 'prayer-item';
+        div.id = 'p-Imsak';
+        div.innerHTML = `<span>Imsak</span><b id="t-Imsak">${time}</b>`;
+        // Masukkan Imsak di urutan pertama
+        grid.insertBefore(div, grid.firstChild);
+        
+        // Sesuaikan grid agar muat 6 kolom (Imsak + 5 Waktu)
+        grid.style.gridTemplateColumns = "repeat(3, 1fr)"; 
+    } else {
+        const el = document.getElementById('t-Imsak');
+        if (el) el.innerText = time;
+    }
+}
 
 function highlightNextPrayer() {
     if (Object.keys(prayerTimes).length === 0) return;
@@ -131,6 +165,7 @@ database.ref('/sensor').on('value', (snap) => {
         checkMcuStatus();
     
         const data = snap.val() || {};
+        currentSensorData = data; // Simpan data ke variabel global agar bisa diakses fungsi lain
         
         // Cek elemen sebelum update untuk mencegah error
         const elTemp = document.getElementById('val-temp');
@@ -167,7 +202,7 @@ function sendCommand(cmd, title, text) {
     Swal.fire({ 
         title: title, text: text, icon: 'question', 
         showCancelButton: true, confirmButtonColor: '#4361ee',
-        background: '#1a1c2c', color: '#fff'
+        // Hapus background gelap agar ikut tema putih default
     }).then((r) => {
         if (r.isConfirmed) {
             database.ref('/control/command').set(cmd);
@@ -177,12 +212,14 @@ function sendCommand(cmd, title, text) {
             let aksiStr = "Command Web";
             if(cmd==1) aksiStr="Buka Pintu (Web)";
             if(cmd==3) aksiStr="Test Adzan (Web)";
+            if(cmd==5) aksiStr="Test Sahur (Web)"; // LOG BARU
             if(cmd==4) aksiStr="Stop Audio (Web)";
 
             // A. Ambil teks suhu asli (Misal: "27.5 °C")
-            let rawTemp = document.getElementById('val-temp') ? document.getElementById('val-temp').innerText : "0";
-
-            let cleanTemp = rawTemp.replace(/[^\d.]/g, '');
+            // REVISI: Gunakan data dari variabel global agar lebih akurat & tidak bergantung UI
+            // Gunakan parseFloat untuk memastikan angka, lalu toFixed(1) untuk konsistensi
+            let rawTemp = currentSensorData.temperature || 0;
+            let cleanTemp = parseFloat(rawTemp).toFixed(1);
 
             const logData = {
                 waktu: now.toLocaleTimeString('en-GB', { hour12: false }),
@@ -191,7 +228,7 @@ function sendCommand(cmd, title, text) {
             };
             database.ref('/logs_pending').push(logData);
 
-            Swal.fire({ title: 'Terkirim!', icon: 'success', timer: 1000, showConfirmButton: false, background: '#1a1c2c', color: '#fff' });
+            Swal.fire({ title: 'Terkirim!', icon: 'success', timer: 1000, showConfirmButton: false });
         }
     });
 }
@@ -208,6 +245,12 @@ database.ref('/config').on('value', (snap) => {
     const swAdzan = document.getElementById('switch-adzan');
     const swSec = document.getElementById('switch-security');
     const swAccess = document.getElementById('switch-access'); // Tambahkan ini
+    
+    // --- FITUR RAMADHAN: Switch Alarm Sahur ---
+    injectSahurSwitch(); 
+    const swSahur = document.getElementById('switch-sahur');
+    if (swSahur) swSahur.checked = config.sahurAlarmMode || false;
+
     const statusText = document.getElementById('access-status-text');
     
     if (swAlert) swAlert.checked = config.alertMode || false;
@@ -223,6 +266,28 @@ database.ref('/config').on('value', (snap) => {
         }
     }
 });
+
+function injectSahurSwitch() {
+    const container = document.querySelector('.main-panel');
+    if (container && !document.getElementById('switch-sahur')) {
+        const div = document.createElement('div');
+        div.className = 'switch-group';
+        div.innerHTML = `
+            <div>
+                <i class="fas fa-moon" style="color:var(--secondary); margin-right:8px;"></i>
+                <b>Alarm Sahur</b>
+                <div style="font-size:0.7rem; color:#aaa;">Bunyi 1 jam sebelum Imsak</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="switch-sahur" onchange="updateConfig('sahurAlarmMode', this.checked)">
+                <span class="slider"></span>
+            </label>
+        `;
+        // Sisipkan sebelum tombol akses/security
+        const ref = container.querySelector('.switch-group'); 
+        if(ref) container.insertBefore(div, ref);
+    }
+}
 
 function loadSheet() {
     const iframe = document.getElementById('sheet-frame');
@@ -367,7 +432,45 @@ function toggleAccess(isDisableMode) {
         position: 'top-end',
         showConfirmButton: false,
         timer: 2000,
-        background: '#1a1c2c',
-        color: '#fff'
     });
 }
+
+// --- FITUR RAMADHAN: GREETING ---
+function injectRamadhanGreeting() {
+    const header = document.querySelector('.app-header');
+    // Pastikan container ada, dan belum ada pesan
+    if (header && header.parentNode && !document.getElementById('ramadhan-msg')) {
+        const div = document.createElement('div');
+        div.id = 'ramadhan-msg';
+        div.className = 'ramadhan-greeting';
+        div.innerHTML = `
+            <h2>Selamat Menjalankan<br>Ibadah Puasa</h2>
+            <div class="sub-text">Ramadhan 1447 H</div>
+        `;
+        // Sisipkan SETELAH header
+        header.parentNode.insertBefore(div, header.nextSibling);
+    }
+}
+
+// --- FITUR TAMBAHAN: Tombol Tes Sahur ---
+function injectSahurTestButton() {
+    const audioGrid = document.querySelector('.audio-test-grid');
+    // Cek apakah grid ada dan tombol belum ada
+    if (audioGrid && !document.getElementById('btn-test-sahur')) {
+        const sahurButton = document.createElement('button');
+        sahurButton.id = 'btn-test-sahur';
+        sahurButton.className = 'btn-test';
+        sahurButton.innerHTML = '<i class="fas fa-bell"></i> Test Sahur';
+        // Kirim command '5' ke Firebase, yang akan dibaca NodeMCU dan diteruskan ke Arduino
+        sahurButton.onclick = () => sendCommand(5, 'Tes Alarm Sahur?', 'Memutar suara alarm sahur di perangkat.');
+
+        // Sisipkan tombol baru di antara tombol Adzan dan Stop
+        const stopButton = audioGrid.querySelector('.stop');
+        if (stopButton) {
+            audioGrid.insertBefore(sahurButton, stopButton);
+        }
+    }
+}
+
+injectRamadhanGreeting();
+injectSahurTestButton(); // Panggil fungsi untuk menambahkan tombol
