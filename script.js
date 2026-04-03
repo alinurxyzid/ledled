@@ -18,6 +18,7 @@ const database = firebase.database();
 let prayerTimes = {};
 let lastMcuUpdate = 0;
 let currentSensorData = {}; // Menyimpan data sensor mentah dari Firebase
+let lastDoorStatus = null; // Untuk mendeteksi perubahan status pintu
 const offlineThreshold = 15000; // 15 Detik toleransi offline
 
 // --- 1. NAVIGASI SIDEBAR & HALAMAN ---
@@ -174,6 +175,21 @@ database.ref('/sensor').on('value', (snap) => {
         if (elTemp) elTemp.innerText = (data.temperature || 0).toFixed(1) + "°C";
         if (elHum) elHum.innerText = (data.humidity || 0) + "%";
         
+        // --- AUTO-LOG: Catat perubahan status pintu ke History ---
+        if (data.status && data.status !== lastDoorStatus) {
+            if (lastDoorStatus !== null) { // Hindari log saat halaman baru dimuat
+                const now = new Date();
+                const logData = {
+                    waktu: now.toLocaleTimeString('en-GB', { hour12: false }),
+                    status: data.status,
+                    suhu: parseFloat(parseFloat(data.temperature || 0).toFixed(1))
+                };
+                // Kirim ke antrean log untuk diproses Google Sheets
+                database.ref('/logs_pending').push(logData);
+            }
+            lastDoorStatus = data.status;
+        }
+
         // Visualisasi Pintu
         const doorText = document.getElementById('door-text');
         const doorIcon = document.getElementById('door-icon');
@@ -217,9 +233,9 @@ function sendCommand(cmd, title, text) {
 
             // A. Ambil teks suhu asli (Misal: "27.5 °C")
             // REVISI: Gunakan data dari variabel global agar lebih akurat & tidak bergantung UI
-            // Gunakan parseFloat untuk memastikan angka, lalu toFixed(1) untuk konsistensi
             let rawTemp = currentSensorData.temperature || 0;
-            let cleanTemp = parseFloat(rawTemp).toFixed(1);
+            // Pastikan angka desimal presisi (misal 27.56 jadi 27.6) dan tetap bertipe Number
+            let cleanTemp = Number(Math.round(rawTemp + "e1") + "e-1") || rawTemp;
 
             const logData = {
                 waktu: now.toLocaleTimeString('en-GB', { hour12: false }),
