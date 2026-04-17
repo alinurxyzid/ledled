@@ -230,6 +230,7 @@ function sendCommand(cmd, title, text) {
             if(cmd==3) aksiStr="Test Adzan (Web)";
             if(cmd==5) aksiStr="Test Sahur (Web)"; // LOG BARU
             if(cmd==4) aksiStr="Stop Audio (Web)";
+            if(cmd==8) aksiStr="Test Tarhim (Web)";
 
             // A. Ambil teks suhu asli (Misal: "27.5 °C")
             // REVISI: Gunakan data dari variabel global agar lebih akurat & tidak bergantung UI
@@ -451,23 +452,6 @@ function toggleAccess(isDisableMode) {
     });
 }
 
-// --- FITUR RAMADHAN: GREETING ---
-function injectRamadhanGreeting() {
-    const header = document.querySelector('.app-header');
-    // Pastikan container ada, dan belum ada pesan
-    if (header && header.parentNode && !document.getElementById('ramadhan-msg')) {
-        const div = document.createElement('div');
-        div.id = 'ramadhan-msg';
-        div.className = 'ramadhan-greeting';
-        div.innerHTML = `
-            <h2>Selamat Menjalankan<br>Ibadah Puasa</h2>
-            <div class="sub-text">Ramadhan 1447 H</div>
-        `;
-        // Sisipkan SETELAH header
-        header.parentNode.insertBefore(div, header.nextSibling);
-    }
-}
-
 // --- FITUR TAMBAHAN: Tombol Tes Sahur ---
 function injectSahurTestButton() {
     const audioGrid = document.querySelector('.audio-test-grid');
@@ -488,5 +472,24 @@ function injectSahurTestButton() {
     }
 }
 
-injectRamadhanGreeting();
-injectSahurTestButton(); // Panggil fungsi untuk menambahkan tombol
+function injectTarhimTestButton() {
+    const audioGrid = document.querySelector('.audio-test-grid');
+    // Cek apakah grid ada dan tombol belum ada
+    if (audioGrid && !document.getElementById('btn-test-tarhim')) {
+        const tarhimButton = document.createElement('button');
+        tarhimButton.id = 'btn-test-tarhim';
+        tarhimButton.className = 'btn-test';
+        tarhimButton.innerHTML = '<i class="fas fa-microphone"></i> Test Tarhim';
+        // Kirim command '8' ke Firebase, yang akan memicu track 18
+        tarhimButton.onclick = () => sendCommand(8, 'Tes Sholawat Tarhim?', 'Memutar sholawat tarhim durasi 5 menit.');
+
+        // Sisipkan tombol baru di antara tombol Sahur dan Stop
+        const stopButton = audioGrid.querySelector('.stop');
+        if (stopButton) {
+            audioGrid.insertBefore(tarhimButton, stopButton);
+        }
+    }
+}
+
+injectSahurTestButton();
+injectTarhimTestButton(); // Panggil fungsi untuk menambahkan tombol tarhim
