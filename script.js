@@ -182,7 +182,7 @@ database.ref('/sensor').on('value', (snap) => {
         const elHum = document.getElementById('val-hum');
         
         if (elTemp) elTemp.innerText = (data.temperature || 0).toFixed(1) + "°C";
-        if (elHum) elHum.innerText = (data.humidity || 0) + "%";
+        if (elHum) elHum.innerText = Math.round(data.humidity || 0) + "%";
         
         // --- AUTO-LOG: Catat perubahan status pintu ke History ---
         if (data.status && data.status !== lastDoorStatus) {
