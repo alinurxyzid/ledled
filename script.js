@@ -19,7 +19,7 @@ let prayerTimes = {};
 let lastMcuUpdate = 0;
 let currentSensorData = {}; // Menyimpan data sensor mentah dari Firebase
 let lastDoorStatus = null; // Untuk mendeteksi perubahan status pintu
-const offlineThreshold = 15000; // 15 Detik toleransi offline
+const offlineThreshold = 25000; // 25 Detik toleransi offline (heartbeat setiap ~10 detik)
 
 // --- 1. NAVIGASI SIDEBAR & HALAMAN ---
 function toggleSidebar() {
@@ -160,6 +160,15 @@ function checkMcuStatus() {
 setInterval(checkMcuStatus, 5000);
 
 // --- 5. DATA SENSOR (SAFE MODE) ---
+// Heartbeat realtime dari ESP8266 untuk icon Online (epoch detik)
+database.ref('/sensor/heartbeat').on('value', (snap) => {
+    const hb = snap.val();
+    if (typeof hb === 'number' && hb > 1577836800) {
+        lastMcuUpdate = hb * 1000;
+        checkMcuStatus();
+    }
+});
+
 database.ref('/sensor').on('value', (snap) => {
     try {
         lastMcuUpdate = Date.now(); 
@@ -250,8 +259,19 @@ function sendCommand(cmd, title, text) {
     });
 }
 
-function updateConfig(path, val) { 
-    database.ref('/config/' + path).set(val); 
+// --- KONFIGURASI VERSI (anti-konflik Firebase online vs web offline) ---
+let cfgVersion = 0;
+function bumpConfigVersion() {
+    const now = Math.floor(Date.now() / 1000);
+    cfgVersion = now > cfgVersion ? now : cfgVersion + 1;
+    return cfgVersion;
+}
+
+function updateConfig(path, val) {
+    const upd = {};
+    upd[path] = val;
+    upd.ver = bumpConfigVersion();
+    database.ref('/config').update(upd);
 }
 
 // Listener Config (Safe Mode)
@@ -262,6 +282,7 @@ database.ref('/config').on('value', (snap) => {
     const swAdzan = document.getElementById('switch-adzan');
     const swSec = document.getElementById('switch-security');
     const swAccess = document.getElementById('switch-access'); // Tambahkan ini
+    const swVoice = document.getElementById('switch-voice');
     
     // --- FITUR RAMADHAN: Switch Alarm Sahur ---
     injectSahurSwitch(); 
@@ -273,6 +294,12 @@ database.ref('/config').on('value', (snap) => {
     if (swAlert) swAlert.checked = config.alertMode || false;
     if (swAdzan) swAdzan.checked = config.adzanAuto || false;
     if (swSec) swSec.checked = config.securityMode || false;
+
+    // Update Switch Voice Jam
+    if (swVoice) {
+        swVoice.checked = config.voiceJamEnabled || false;
+        updateVoiceUiState(swVoice.checked);
+    }
     
     // Update Switch Disable Access
     if (swAccess) {
@@ -432,8 +459,9 @@ function toggleAccess(isDisableMode) {
     // 1. Kirim Perintah ke Arduino via Firebase
     database.ref('/control/command').set(cmdID);
     
-    // 2. Simpan status ke config agar UI sinkron
-    database.ref('/config/accessCardDisabled').set(isDisableMode);
+    // 2. Simpan status ke config agar UI sinkron (dengan versi anti-konflik)
+    const upd = { accessCardDisabled: isDisableMode, ver: bumpConfigVersion() };
+    database.ref('/config').update(upd);
 
     // 3. Update teks bantuan
     if (statusText) {
@@ -452,44 +480,94 @@ function toggleAccess(isDisableMode) {
     });
 }
 
-// --- FITUR TAMBAHAN: Tombol Tes Sahur ---
-function injectSahurTestButton() {
-    const audioGrid = document.querySelector('.audio-test-grid');
-    // Cek apakah grid ada dan tombol belum ada
-    if (audioGrid && !document.getElementById('btn-test-sahur')) {
-        const sahurButton = document.createElement('button');
-        sahurButton.id = 'btn-test-sahur';
-        sahurButton.className = 'btn-test';
-        sahurButton.innerHTML = '<i class="fas fa-bell"></i> Test Sahur';
-        // Kirim command '5' ke Firebase, yang akan dibaca NodeMCU dan diteruskan ke Arduino
-        sahurButton.onclick = () => sendCommand(5, 'Tes Alarm Sahur?', 'Memutar suara alarm sahur di perangkat.');
-
-        // Sisipkan tombol baru di antara tombol Adzan dan Stop
-        const stopButton = audioGrid.querySelector('.stop');
-        if (stopButton) {
-            audioGrid.insertBefore(sahurButton, stopButton);
-        }
+// --- FITUR VOICE JAM TESTER (via Firebase) ---
+function updateVoiceUiState(enabled) {
+    const txt = document.getElementById('voice-enable-txt');
+    const jamSel = document.getElementById('voice-jam');
+    const waktuSel = document.getElementById('voice-waktu');
+    const playBtn = document.getElementById('btn-voice-play');
+    if (txt) {
+        txt.innerText = enabled ? '✅ Fitur voice jam AKTIF - siap dipakai' : '⛔ Fitur voice jam NONAKTIF';
+        txt.style.color = enabled ? '#06d6a0' : '#ff4d6d';
     }
+    if (jamSel) jamSel.disabled = !enabled;
+    if (waktuSel) waktuSel.disabled = !enabled;
+    if (playBtn) playBtn.disabled = !enabled;
 }
 
-function injectTarhimTestButton() {
-    const audioGrid = document.querySelector('.audio-test-grid');
-    // Cek apakah grid ada dan tombol belum ada
-    if (audioGrid && !document.getElementById('btn-test-tarhim')) {
-        const tarhimButton = document.createElement('button');
-        tarhimButton.id = 'btn-test-tarhim';
-        tarhimButton.className = 'btn-test';
-        tarhimButton.innerHTML = '<i class="fas fa-microphone"></i> Test Tarhim';
-        // Kirim command '8' ke Firebase, yang akan memicu track 18
-        tarhimButton.onclick = () => sendCommand(8, 'Tes Sholawat Tarhim?', 'Memutar sholawat tarhim durasi 5 menit.');
-
-        // Sisipkan tombol baru di antara tombol Sahur dan Stop
-        const stopButton = audioGrid.querySelector('.stop');
-        if (stopButton) {
-            audioGrid.insertBefore(tarhimButton, stopButton);
-        }
+function playVoiceJam() {
+    const swVoice = document.getElementById('switch-voice');
+    if (swVoice && !swVoice.checked) {
+        Swal.fire({ icon: 'warning', title: 'Voice Jam NONAKTIF', text: 'Aktifkan toggle Voice Jam Tester dulu.' });
+        return;
     }
+    const jam = parseInt(document.getElementById('voice-jam').value);
+    const waktuId = parseInt(document.getElementById('voice-waktu').value);
+    const btn = document.getElementById('btn-voice-play');
+    const st = document.getElementById('voice-status');
+    if (isNaN(jam) || jam < 1 || jam > 12) {
+        if (st) { st.innerText = 'Jam harus 1-12'; st.style.color = '#ff4d6d'; }
+        return;
+    }
+    if (btn) { btn.disabled = true; btn.innerText = '⏳ Memutar...'; }
+    if (st) { st.style.color = '#636e72'; st.innerText = 'Mengirim voice jam ' + jam + ' ' + document.getElementById('voice-waktu').selectedOptions[0].innerText + '...'; }
+
+    // Reset hasil lama, kirim kode paket: jam*10 + waktuId (1=pagi 2=siang 3=sore 4=malam)
+    database.ref('/control/voice_test_result').set('')
+        .then(() => database.ref('/control/voice_test').set(jam * 10 + waktuId))
+        .catch(() => {
+            if (btn) { btn.disabled = false; btn.innerText = 'PLAY VOICE'; }
+            if (st) { st.innerText = 'Gagal mengirim ke Firebase'; st.style.color = '#ff4d6d'; }
+        });
 }
 
-injectSahurTestButton();
-injectTarhimTestButton(); // Panggil fungsi untuk menambahkan tombol tarhim
+database.ref('/control/voice_test_result').on('value', (snap) => {
+    const r = snap.val();
+    if (typeof r === 'string' && r.length > 0) {
+        const btn = document.getElementById('btn-voice-play');
+        const st = document.getElementById('voice-status');
+        const isError = r.indexOf('error:') === 0;
+        if (st) {
+            st.innerText = (isError ? '⛔ ' : '✅ ') + r.replace(/^(error|success):\s*/, '');
+            st.style.color = isError ? '#ff4d6d' : '#06d6a0';
+        }
+        if (btn) { btn.disabled = false; btn.innerText = 'PLAY VOICE'; }
+        setTimeout(() => { database.ref('/control/voice_test_result').set(''); }, 4000);
+    }
+});
+
+function stopVoiceJam() {
+    const st = document.getElementById('voice-status');
+    if (st) { st.style.color = '#636e72'; st.innerText = 'Mengirim perintah stop audio...'; }
+    database.ref('/control/command').set(4)
+        .then(() => { if (st) { st.innerText = 'Stop audio terkirim.'; st.style.color = '#06d6a0'; } })
+        .catch(() => { if (st) { st.innerText = 'Gagal mengirim stop.'; st.style.color = '#ff4d6d'; } });
+}
+
+// --- RESTART DEVICE (via Firebase) ---
+function restartDevice() {
+    Swal.fire({
+        title: 'Restart Perangkat?',
+        text: 'ESP8266 akan reboot dalam beberapa detik.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ff4757',
+        confirmButtonText: 'Ya, Restart',
+        cancelButtonText: 'Batal'
+    }).then((r) => {
+        if (r.isConfirmed) {
+            database.ref('/control/restart').set(1);
+            Swal.fire({
+                icon: 'info', title: 'Restarting...',
+                text: 'Menunggu ESP8266 reboot (sekitar 10-30 detik).',
+                showConfirmButton: false, timer: 10000
+            });
+        }
+    });
+}
+
+// inisialisasi state UI voice jam saat halaman dimuat
+document.addEventListener('DOMContentLoaded', () => {
+    const swVoice = document.getElementById('switch-voice');
+    if (swVoice) updateVoiceUiState(swVoice.checked);
+});
