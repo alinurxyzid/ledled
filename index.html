@@ -129,11 +129,60 @@
                     <button class="btn-test" onclick="sendCommand(3, 'Test Adzan', 'Bunyikan suara adzan sekarang?')">
                         <i class="fas fa-play"></i> TEST ADZAN
                     </button>
+                    <button class="btn-test" onclick="sendCommand(5, 'Tes Alarm Sahur?', 'Memutar suara alarm sahur di perangkat.')">
+                        <i class="fas fa-bell"></i> TEST SAHUR
+                    </button>
+                    <button class="btn-test" onclick="sendCommand(8, 'Tes Sholawat Tarhim?', 'Memutar sholawat tarhim durasi 5 menit.')">
+                        <i class="fas fa-microphone"></i> TEST TARHIM
+                    </button>
                     <button class="btn-test stop" onclick="sendCommand(4, 'Stop Audio', 'Matikan suara?')">
                         <i class="fas fa-stop"></i> STOP AUDIO
                     </button>
                 </div>
             </div>
+
+            <div class="main-panel" style="margin-top:15px">
+                <div class="switch-group" style="border-top:none">
+                    <div>
+                        <b>Voice Jam Tester</b><br>
+                        <small id="voice-enable-txt" style="color:#666">Fitur voice jam sedang NONAKTIF</small>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="switch-voice" onchange="updateConfig('voiceJamEnabled', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;margin-top:10px">
+                    <div>
+                        <label style="font-size:0.7rem;color:#636e72;font-weight:bold">Jam (1-12)</label>
+                        <select id="voice-jam">
+                            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.7rem;color:#636e72;font-weight:bold">Waktu</label>
+                        <select id="voice-waktu">
+                            <option value="1">Pagi</option>
+                            <option value="2">Siang</option>
+                            <option value="3">Sore</option>
+                            <option value="4">Malam</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="audio-test-grid" style="margin-top:15px;padding-top:15px">
+                    <button class="btn-test" id="btn-voice-play" onclick="playVoiceJam()">
+                        <i class="fas fa-play"></i> PLAY VOICE
+                    </button>
+                    <button class="btn-test stop" onclick="stopVoiceJam()">
+                        <i class="fas fa-stop"></i> STOP VOICE
+                    </button>
+                </div>
+                <small id="voice-status" style="display:block;margin-top:10px;font-size:0.7rem;color:#636e72;min-height:14px"></small>
+            </div>
+
+            <button class="btn-unlock" id="btn-restart" onclick="restartDevice()" style="background:linear-gradient(45deg,#ff4757,#ff6b81);margin-top:15px">
+                <i class="fas fa-power-off"></i> RESTART DEVICE
+            </button>
         </div>
 
         <div id="page-history" class="page-section" style="display:none;">
