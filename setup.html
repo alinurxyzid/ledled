@@ -12,17 +12,21 @@
     <link rel="stylesheet" href="style.css">
 
     <style>
-        .setup-section { border-top: 1px solid #2d3436; padding: 15px 0; }
+        .setup-section { border-top: 1px solid var(--glass-border); padding: 16px 0; }
         .setup-section:first-of-type { border-top: none; }
-        .setup-section h4 { color: var(--primary); margin: 0 0 4px; font-size: 0.95rem; }
-        .setup-section .hint { font-size: 0.68rem; color: #8a8f95; margin-bottom: 12px; display: block; }
-        .setup-row { display: grid; grid-template-columns: 1fr 120px; align-items: center; gap: 10px; margin-bottom: 8px; }
-        .setup-row label { font-size: 0.82rem; color: #dfe6e9; }
-        .setup-row input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #2d3436; background: #1e272e; color: #fff; font-size: 0.85rem; }
-        .setup-row input:focus { outline: none; border-color: var(--primary); }
-        .setup-row .unit { font-size: 0.68rem; color: #636e72; margin-left: -105px; padding-left: 4px; }
+        .setup-section h4 { color: #000; margin: 0 0 3px; font-size: 1rem; font-weight: 800; }
+        .setup-section h4 i { color: var(--primary); }
+        .setup-section .hint { font-size: 0.72rem; color: #57606f; margin-bottom: 14px; display: block; }
+        .setup-row { display: grid; grid-template-columns: 1fr 130px; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .setup-row label { font-size: 0.85rem; color: #000; font-weight: 600; }
+        .setup-row input {
+            width: 100%; padding: 9px 12px; border-radius: 10px;
+            border: 1.5px solid #b2bec3; background: #ffffff; color: #000;
+            font-size: 0.9rem; font-weight: 700; text-align: center;
+        }
+        .setup-row input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(9, 132, 227, 0.15); }
         #btn-save { position: sticky; bottom: 12px; margin-top: 20px; }
-        #save-status { display: block; margin-top: 10px; font-size: 0.75rem; min-height: 16px; text-align: center; }
+        #save-status { display: block; margin-top: 10px; font-size: 0.78rem; min-height: 16px; text-align: center; color: #000; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -68,7 +72,7 @@
                 <h3 style="color:var(--primary); margin-bottom:6px;">
                     <i class="fas fa-sliders-h"></i> Setelan Lanjutan
                 </h3>
-                <p style="font-size:0.75rem; color:#8a8f95; margin-bottom:18px;">
+                <p style="font-size:0.78rem; color:#57606f; margin-bottom:18px;">
                     Ubah setelan lalu tekan <b>Simpan</b>. Semua perubahan dikirim sekaligus
                     dan diterapkan perangkat saat sinkronisasi berikutnya (&le; 10 detik).
                 </p>
