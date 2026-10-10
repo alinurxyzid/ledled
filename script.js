@@ -223,6 +223,34 @@ database.ref('/sensor').on('value', (snap) => {
 });
 
 // --- 6. CONTROL & CONFIG ---
+// Pelacak ACK: web menunggu balasan perangkat lewat /control/command_result
+let pendingCommand = null;
+let pendingCommandTimer = null;
+
+// Siapkan pelacak ACK (perangkat poll Firebase tiap ~10s, timeout 15s)
+function armCommandAck(cmd) {
+    pendingCommand = { cmd: cmd };
+    if (pendingCommandTimer) clearTimeout(pendingCommandTimer);
+    pendingCommandTimer = setTimeout(() => {
+        pendingCommand = null;
+        Swal.fire({
+            title: 'Perangkat tidak merespon',
+            text: 'Perintah sudah terkirim, tapi belum ada balasan dari perangkat (mungkin offline).',
+            icon: 'error'
+        });
+    }, 15000);
+}
+
+// Listener ACK dari perangkat (mengikuti pola /control/voice_test_result)
+database.ref('/control/command_result').on('value', (snap) => {
+    const r = snap.val();
+    if (r && r.status === 'success' && pendingCommand && r.cmd === pendingCommand.cmd) {
+        clearTimeout(pendingCommandTimer);
+        pendingCommand = null;
+        Swal.fire({ title: 'Berhasil Diterima Perangkat!', icon: 'success', timer: 1500, showConfirmButton: false });
+    }
+});
+
 function sendCommand(cmd, title, text) {
     Swal.fire({ 
         title: title, text: text, icon: 'question', 
@@ -230,8 +258,16 @@ function sendCommand(cmd, title, text) {
         // Hapus background gelap agar ikut tema putih default
     }).then((r) => {
         if (r.isConfirmed) {
-            database.ref('/control/command').set(cmd);
-            
+            armCommandAck(cmd);
+
+            Swal.fire({ title: 'Menunggu perangkat...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            database.ref('/control/command').set(cmd).catch(() => {
+                if (pendingCommandTimer) clearTimeout(pendingCommandTimer);
+                pendingCommand = null;
+                Swal.fire({ title: 'Gagal mengirim perintah', icon: 'error' });
+            });
+
             // Log Manual ke History (Pending Queue)
             const now = new Date();
             let aksiStr = "Command Web";
@@ -253,8 +289,6 @@ function sendCommand(cmd, title, text) {
                 suhu: cleanTemp
             };
             database.ref('/logs_pending').push(logData);
-
-            Swal.fire({ title: 'Terkirim!', icon: 'success', timer: 1000, showConfirmButton: false });
         }
     });
 }
@@ -456,9 +490,15 @@ function toggleAccess(isDisableMode) {
     const cmdID = isDisableMode ? 6 : 7; 
     const statusText = document.getElementById('access-status-text');
 
-    // 1. Kirim Perintah ke Arduino via Firebase
-    database.ref('/control/command').set(cmdID);
-    
+    // 1. Siapkan pelacak ACK + kirim perintah ke perangkat via Firebase
+    armCommandAck(cmdID);
+    Swal.fire({ title: 'Menunggu perangkat...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    database.ref('/control/command').set(cmdID).catch(() => {
+        if (pendingCommandTimer) clearTimeout(pendingCommandTimer);
+        pendingCommand = null;
+        Swal.fire({ title: 'Gagal mengirim perintah', icon: 'error' });
+    });
+
     // 2. Simpan status ke config agar UI sinkron (dengan versi anti-konflik)
     const upd = { accessCardDisabled: isDisableMode, ver: bumpConfigVersion() };
     database.ref('/config').update(upd);
@@ -468,16 +508,6 @@ function toggleAccess(isDisableMode) {
         statusText.innerText = isDisableMode ? "Sensor kartu sedang DIMATIKAN" : "Sensor kartu sedang AKTIF";
         statusText.style.color = isDisableMode ? "#ff4d6d" : "#666";
     }
-
-    // Notifikasi Toast
-    Swal.fire({
-        icon: isDisableMode ? 'warning' : 'success',
-        title: isDisableMode ? 'Akses Kartu Dimatikan' : 'Akses Kartu Diaktifkan',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 2000,
-    });
 }
 
 // --- FITUR VOICE JAM TESTER (via Firebase) ---
@@ -517,7 +547,7 @@ function playVoiceJam() {
         .then(() => database.ref('/control/voice_test').set(jam * 10 + waktuId))
         .catch(() => {
             if (btn) { btn.disabled = false; btn.innerText = 'PLAY VOICE'; }
-            if (st) { st.innerText = 'Gagal mengirim ke Firebase'; st.style.color = '#ff4d6d'; }
+            if (st) { st.innerText = 'Gagal mengirim perintah'; st.style.color = '#ff4d6d'; }
         });
 }
 
@@ -548,7 +578,7 @@ function stopVoiceJam() {
 function restartDevice() {
     Swal.fire({
         title: 'Restart Perangkat?',
-        text: 'ESP8266 akan reboot dalam beberapa detik.',
+        text: 'Perangkat akan reboot dalam beberapa detik.',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ff4757',
@@ -559,7 +589,7 @@ function restartDevice() {
             database.ref('/control/restart').set(1);
             Swal.fire({
                 icon: 'info', title: 'Restarting...',
-                text: 'Menunggu ESP8266 reboot (sekitar 10-30 detik).',
+                text: 'Menunggu perangkat reboot (sekitar 10-30 detik).',
                 showConfirmButton: false, timer: 10000
             });
         }
