@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup - iSmartLock Pro</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        .setup-section { border-top: 1px solid #2d3436; padding: 15px 0; }
+        .setup-section:first-of-type { border-top: none; }
+        .setup-section h4 { color: var(--primary); margin: 0 0 4px; font-size: 0.95rem; }
+        .setup-section .hint { font-size: 0.68rem; color: #8a8f95; margin-bottom: 12px; display: block; }
+        .setup-row { display: grid; grid-template-columns: 1fr 120px; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .setup-row label { font-size: 0.82rem; color: #dfe6e9; }
+        .setup-row input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #2d3436; background: #1e272e; color: #fff; font-size: 0.85rem; }
+        .setup-row input:focus { outline: none; border-color: var(--primary); }
+        .setup-row .unit { font-size: 0.68rem; color: #636e72; margin-left: -105px; padding-left: 4px; }
+        #btn-save { position: sticky; bottom: 12px; margin-top: 20px; }
+        #save-status { display: block; margin-top: 10px; font-size: 0.75rem; min-height: 16px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-shield-alt"></i> iSmartLock
+        </div>
+        <ul class="sidebar-menu">
+            <li onclick="location.href='index.html'">
+                <i class="fas fa-home"></i> Dashboard
+            </li>
+            <li class="active-menu">
+                <i class="fas fa-sliders-h"></i> Setup
+            </li>
+            <li onclick="location.href='log.html'">
+                <i class="fas fa-table"></i> Log History
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            System Ver 3.0<br>
+            Connected
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="container">
+        <header class="app-header">
+            <div style="display:flex; align-items:center; gap:15px">
+                <button class="btn-burger" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <div class="header-brand">
+                    <h1>Setup</h1>
+                </div>
+            </div>
+            <div id="mcu-status" class="status-badge offline">
+                <i class="fas fa-wifi"></i> <span>Offline</span>
+            </div>
+        </header>
+
+        <div id="page-setup" class="page-section active">
+            <div class="main-panel">
+                <h3 style="color:var(--primary); margin-bottom:6px;">
+                    <i class="fas fa-sliders-h"></i> Setelan Lanjutan
+                </h3>
+                <p style="font-size:0.75rem; color:#8a8f95; margin-bottom:18px;">
+                    Ubah setelan lalu tekan <b>Simpan</b>. Semua perubahan dikirim sekaligus
+                    dan diterapkan perangkat saat sinkronisasi berikutnya (&le; 10 detik).
+                </p>
+
+                <div class="setup-section">
+                    <h4><i class="fas fa-mosque"></i> Track Adzan per Waktu</h4>
+                    <span class="hint">Nomor file di kartu SD (folder MP3).</span>
+                    <div class="setup-row"><label>Subuh</label><input type="number" id="adzSubuh" min="1" max="9999"></div>
+                    <div class="setup-row"><label>Dzuhur</label><input type="number" id="adzDzuhur" min="1" max="9999"></div>
+                    <div class="setup-row"><label>Ashar</label><input type="number" id="adzAshar" min="1" max="9999"></div>
+                    <div class="setup-row"><label>Maghrib</label><input type="number" id="adzMaghrib" min="1" max="9999"></div>
+                    <div class="setup-row"><label>Isya</label><input type="number" id="adzIsya" min="1" max="9999"></div>
+                </div>
+
+                <div class="setup-section">
+                    <h4><i class="fas fa-stopwatch"></i> Durasi Kunci Audio</h4>
+                    <span class="hint">Lama audio dikunci (menit).</span>
+                    <div class="setup-row"><label>Adzan</label><input type="number" id="durAdzanMin" min="1" max="15" step="0.5"></div>
+                    <div class="setup-row"><label>Tarhim</label><input type="number" id="durTarhimMin" min="1" max="15" step="0.5"></div>
+                    <div class="setup-row"><label>Sahur</label><input type="number" id="durSahurMin" min="1" max="15" step="0.5"></div>
+                </div>
+
+                <div class="setup-section">
+                    <h4><i class="fas fa-thermometer-half"></i> Threshold Suhu Alert</h4>
+                    <span class="hint">Batas suhu untuk mode peringatan pintu terbuka.</span>
+                    <div class="setup-row"><label>Suhu (&deg;C)</label><input type="number" id="tempAlertC" min="10" max="60" step="0.1"></div>
+                </div>
+
+                <div class="setup-section">
+                    <h4><i class="fas fa-clock"></i> Offset Tarhim &amp; Sahur</h4>
+                    <span class="hint">Jarak sebelum adzan/subuh.</span>
+                    <div class="setup-row"><label>Tarhim (detik sebelum adzan)</label><input type="number" id="tarhimOffsetSec" min="60" max="3600"></div>
+                    <div class="setup-row"><label>Sahur (menit sebelum subuh)</label><input type="number" id="sahurOffsetMin" min="10" max="180"></div>
+                </div>
+
+                <div class="setup-section">
+                    <h4><i class="fas fa-hourglass-half"></i> Window Adzan Imminent</h4>
+                    <span class="hint">Periode audio lain di-skip mendekati adzan.</span>
+                    <div class="setup-row"><label>Sebelum adzan (menit)</label><input type="number" id="adzanBeforeMin" min="1" max="60"></div>
+                    <div class="setup-row"><label>Sesudah adzan (menit)</label><input type="number" id="adzanAfterMin" min="0.5" max="30" step="0.5"></div>
+                    <div class="setup-row"><label>Sesudah tarhim (menit)</label><input type="number" id="tarhimAfterMin" min="1" max="30"></div>
+                </div>
+
+                <div class="setup-section">
+                    <h4><i class="fas fa-sync-alt"></i> Interval Sinkronisasi</h4>
+                    <span class="hint">Frekuensi komunikasi perangkat ke server.</span>
+                    <div class="setup-row"><label>Poll server (detik)</label><input type="number" id="fbIntervalSec" min="5" max="300"></div>
+                    <div class="setup-row"><label>Sync jadwal (jam)</label><input type="number" id="syncIntervalHrs" min="1" max="48"></div>
+                </div>
+
+                <button class="btn-unlock" id="btn-save" onclick="saveSetup()">
+                    <i class="fas fa-save"></i> SIMPAN SETELAN
+                </button>
+                <small id="save-status"></small>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script src="setup.js"></script>
+</body>
+</html>

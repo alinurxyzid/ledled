@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log History - iSmartLock Pro</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-shield-alt"></i> iSmartLock
+        </div>
+        <ul class="sidebar-menu">
+            <li onclick="location.href='index.html'">
+                <i class="fas fa-home"></i> Dashboard
+            </li>
+            <li onclick="location.href='setup.html'">
+                <i class="fas fa-sliders-h"></i> Setup
+            </li>
+            <li class="active-menu">
+                <i class="fas fa-table"></i> Log History
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            System Ver 3.0<br>
+            Connected
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="container">
+        <header class="app-header">
+            <div style="display:flex; align-items:center; gap:15px">
+                <button class="btn-burger" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <div class="header-brand">
+                    <h1>Log History</h1>
+                </div>
+            </div>
+            <div id="mcu-status" class="status-badge offline">
+                <i class="fas fa-wifi"></i> <span>Offline</span>
+            </div>
+        </header>
+
+        <div id="page-history" class="page-section active">
+            <div class="main-panel" style="min-height: 600px;">
+                <h3 style="color:var(--primary); margin-bottom:15px;">
+                    <i class="fas fa-history"></i> Riwayat Akses
+                </h3>
+
+                <p style="font-size:0.8rem; color:#aaa; margin-bottom:20px;">
+                    Data ini disinkronisasi otomatis ke Google Spreadsheet setiap 1 menit.
+                </p>
+
+                <a href="https://docs.google.com/spreadsheets/d/1sY__Jbcj_fwcG3enQwQ9KNNvRpjzBLXE475j2MM6BMg/edit" id="btn-open-sheet" target="_blank" class="btn-unlock btn-google-sheet">
+                    <i class="fas fa-external-link-alt"></i>
+                    <span>BUKA GOOGLE SHEET</span>
+                </a>
+
+                <div class="sheet-container">
+                    <div id="sheet-cover">
+                        <div class="cover-content">
+                            <i class="fas fa-database" style="font-size: 3rem; color: #107c41; margin-bottom: 15px;"></i>
+                            <h3>Data Log History</h3>
+                            <p>Klik tombol di bawah untuk memuat data terbaru dari server.</p>
+
+                            <button id="btn-load" onclick="loadNativeTable()" class="btn-unlock"
+                                style="display: block; margin: 10px auto; width: fit-content; padding: 10px 40px;">
+                                <i class="fas fa-sync-alt"></i> TAMPILKAN TABEL
+                            </button>
+
+                            <div id="loading-msg" style="display:none; margin-top:15px; color:#107c41; font-weight:bold;">
+                                <i class="fas fa-spinner fa-spin"></i> Sedang mengambil data...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-scroll-area">
+                        <table class="custom-table">
+                            <thead>
+                                <tr id="table-head"></tr>
+                            </thead>
+                            <tbody id="table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script src="log.js"></script>
+</body>
+</html>
