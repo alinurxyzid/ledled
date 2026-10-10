@@ -260,7 +260,7 @@ function sendCommand(cmd, title, text) {
         if (r.isConfirmed) {
             armCommandAck(cmd);
 
-            Swal.fire({ title: 'Menunggu perangkat...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: 'Mohon Tunggu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             database.ref('/control/command').set(cmd).catch(() => {
                 if (pendingCommandTimer) clearTimeout(pendingCommandTimer);
@@ -492,7 +492,7 @@ function toggleAccess(isDisableMode) {
 
     // 1. Siapkan pelacak ACK + kirim perintah ke perangkat via Firebase
     armCommandAck(cmdID);
-    Swal.fire({ title: 'Menunggu perangkat...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    Swal.fire({ title: 'Mohon Tunggu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     database.ref('/control/command').set(cmdID).catch(() => {
         if (pendingCommandTimer) clearTimeout(pendingCommandTimer);
         pendingCommand = null;
@@ -589,7 +589,7 @@ function restartDevice() {
             database.ref('/control/restart').set(1);
             Swal.fire({
                 icon: 'info', title: 'Restarting...',
-                text: 'Menunggu perangkat reboot (sekitar 10-30 detik).',
+                text: 'Mohon Tunggu reboot (sekitar 10-30 detik).',
                 showConfirmButton: false, timer: 10000
             });
         }
