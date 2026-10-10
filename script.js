@@ -1,59 +1,11 @@
-// --- KONFIGURASI FIREBASE ---
-const firebaseConfig = {
-    apiKey: "AIzaSyDcmkklfPbwnf_xI2Ie4bBffv_1A6Z9Nh0",
-    authDomain: "pintuiot.firebaseapp.com",
-    databaseURL: "https://pintuiot-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "pintuiot",
-    messagingSenderId: "555761531390",
-    appId: "1:555761531390:web:d5093cf6c4dac86ba768af"
-};
+// ===================== SCRIPT.JS (DASHBOARD) =====================
+// Logika khusus halaman dashboard (index.html). Bagian bersama
+// (Firebase, status, ACK, sendCommand, config helper) ada di shared.js.
 
-// Inisialisasi Firebase (Cek agar tidak double init)
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const database = firebase.database();
-
-// --- VARIABEL GLOBAL ---
+// --- 1. JAM DIGITAL ---
 let prayerTimes = {};
-let lastMcuUpdate = 0;
-let currentSensorData = {}; // Menyimpan data sensor mentah dari Firebase
-let lastDoorStatus = null; // Untuk mendeteksi perubahan status pintu
-const offlineThreshold = 25000; // 25 Detik toleransi offline (heartbeat setiap ~10 detik)
+let lastDoorStatus = null;
 
-// --- 1. NAVIGASI SIDEBAR & HALAMAN ---
-function toggleSidebar() {
-    const sb = document.getElementById('sidebar');
-    const ov = document.getElementById('overlay');
-    if(sb) sb.classList.toggle('active');
-    if(ov) ov.classList.toggle('active');
-}
-
-// --- MODIFIKASI NAVIGASI & AUTO REFRESH ---
-function showPage(pageName) {
-    // 1. Sembunyikan semua halaman
-    document.querySelectorAll('.page-section').forEach(el => el.style.display = 'none');
-    
-    // 2. Tampilkan halaman target
-    const target = document.getElementById('page-' + pageName);
-    if (target) target.style.display = 'block';
-
-    // 3. Update Menu Aktif di Sidebar
-    document.querySelectorAll('.sidebar-menu li').forEach(el => el.classList.remove('active-menu'));
-    const menu = document.getElementById(pageName === 'dashboard' ? 'menu-dash' : 'menu-hist');
-    if (menu) menu.classList.add('active-menu');
-
-    // 4. FITUR: Auto-Refresh jika buka Log History
-    if (pageName === 'history') {
-        loadNativeTable(); // Panggil fungsi load saat pindah halaman
-    }
-
-    // 5. Tutup sidebar otomatis (Mobile UX)
-    const sb = document.getElementById('sidebar');
-    if (sb && sb.classList.contains('active')) toggleSidebar();
-}
-
-// --- 2. JAM DIGITAL ---
 function updateClock() {
     const now = new Date();
     const timeEl = document.getElementById('live-clock');
@@ -61,21 +13,20 @@ function updateClock() {
 
     if (timeEl) timeEl.innerText = now.toLocaleTimeString('en-GB', { hour12: false });
     if (dateEl) dateEl.innerText = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    
+
     if (now.getSeconds() === 0) highlightNextPrayer();
 }
 setInterval(updateClock, 1000);
 
-// --- 3. JADWAL SHOLAT ---
+// --- 2. JADWAL SHOLAT ---
 database.ref('/jadwal').on('value', (snap) => {
     const jadwal = snap.val();
     if (jadwal) {
         const map = { 'subuh': 'Fajr', 'dzuhur': 'Dhuhr', 'ashar': 'Asr', 'maghrib': 'Maghrib', 'isya': 'Isha' };
         prayerTimes = {};
-        
+
         // --- FITUR RAMADHAN: Hitung & Tampilkan Imsak ---
         if (jadwal['subuh']) {
-            // Hitung Imsak (Subuh - 10 Menit)
             let [h, m] = jadwal['subuh'].split(':').map(Number);
             let imsakMins = (h * 60 + m) - 10;
             if (imsakMins < 0) imsakMins += 1440;
@@ -83,7 +34,7 @@ database.ref('/jadwal').on('value', (snap) => {
             let imsakM = (imsakMins % 60).toString().padStart(2, '0');
             let imsakTime = `${imsakH}:${imsakM}`;
 
-            injectImsakDisplay(imsakTime); // Tampilkan di UI
+            injectImsakDisplay(imsakTime);
             prayerTimes['Imsak'] = imsakTime;
         }
 
@@ -98,7 +49,6 @@ database.ref('/jadwal').on('value', (snap) => {
     }
 });
 
-// Fungsi Injeksi Tampilan Imsak (Agar tidak perlu edit HTML manual)
 function injectImsakDisplay(time) {
     const grid = document.querySelector('.prayer-grid');
     if (grid && !document.getElementById('p-Imsak')) {
@@ -106,11 +56,8 @@ function injectImsakDisplay(time) {
         div.className = 'prayer-item';
         div.id = 'p-Imsak';
         div.innerHTML = `<span>Imsak</span><b id="t-Imsak">${time}</b>`;
-        // Masukkan Imsak di urutan pertama
         grid.insertBefore(div, grid.firstChild);
-        
-        // Sesuaikan grid agar muat 6 kolom (Imsak + 5 Waktu)
-        grid.style.gridTemplateColumns = "repeat(3, 1fr)"; 
+        grid.style.gridTemplateColumns = "repeat(3, 1fr)";
     } else {
         const el = document.getElementById('t-Imsak');
         if (el) el.innerText = time;
@@ -126,75 +73,37 @@ function highlightNextPrayer() {
     Object.keys(prayerTimes).forEach(p => {
         const [h, m] = prayerTimes[p].split(':');
         const diff = (parseInt(h) * 60 + parseInt(m)) - currentMin;
-        
+
         const elItem = document.getElementById(`p-${p}`);
         if (elItem) elItem.classList.remove('active');
-        
+
         if (diff > 0 && diff < minDiff) { minDiff = diff; nextPrayer = p; }
     });
-    
+
     const elNext = document.getElementById(`p-${nextPrayer}`);
-    if(elNext) elNext.classList.add('active');
+    if (elNext) elNext.classList.add('active');
 }
 
-// --- 4. STATUS ONLINE/OFFLINE ---
-function checkMcuStatus() {
-    const now = Date.now();
-    const badge = document.getElementById('mcu-status');
-    if (!badge) return;
-    
-    const txt = badge.querySelector('span');
-    
-    if (lastMcuUpdate !== 0 && (now - lastMcuUpdate < offlineThreshold)) {
-        if (!badge.classList.contains('online')) {
-            badge.className = 'status-badge online';
-            if(txt) txt.innerText = 'Online';
-        }
-    } else {
-        if (!badge.classList.contains('offline')) {
-            badge.className = 'status-badge offline';
-            if(txt) txt.innerText = 'Offline';
-        }
-    }
-}
-setInterval(checkMcuStatus, 5000);
-
-// --- 5. DATA SENSOR (SAFE MODE) ---
-// Heartbeat realtime dari ESP8266 untuk icon Online (epoch detik)
-database.ref('/sensor/heartbeat').on('value', (snap) => {
-    const hb = snap.val();
-    if (typeof hb === 'number' && hb > 1577836800) {
-        lastMcuUpdate = hb * 1000;
-        checkMcuStatus();
-    }
-});
-
+// --- 3. DATA SENSOR (SAFE MODE) ---
 database.ref('/sensor').on('value', (snap) => {
     try {
-        lastMcuUpdate = Date.now(); 
+        lastMcuUpdate = Date.now();
         checkMcuStatus();
-    
+
         const data = snap.val() || {};
-        currentSensorData = data; // Simpan data ke variabel global agar bisa diakses fungsi lain
-        
-        // Cek elemen sebelum update untuk mencegah error
+        currentSensorData = data;
+
         const elTemp = document.getElementById('val-temp');
         const elHum = document.getElementById('val-hum');
-        
         if (elTemp) elTemp.innerText = (data.temperature || 0).toFixed(1) + "°C";
         if (elHum) elHum.innerText = Math.round(data.humidity || 0) + "%";
-        
+
         // --- AUTO-LOG: Catat perubahan status pintu ke History ---
         if (data.status && data.status !== lastDoorStatus) {
-            if (lastDoorStatus !== null) { // Hindari log saat halaman baru dimuat
-                const now = new Date();
-                const logData = {
-                    waktu: now.toLocaleTimeString('en-GB', { hour12: false }),
-                    status: data.status,
-                    suhu: parseFloat(parseFloat(data.temperature || 0).toFixed(1))
-                };
-                // Kirim ke antrean log untuk diproses Google Sheets
-                database.ref('/logs_pending').push(logData);
+            if (lastDoorStatus !== null) {
+                const raw = parseFloat(data.temperature || 0);
+                const cleanTemp = Number(Math.round(raw + "e1") + "e-1") || raw;
+                pushLog(data.status, cleanTemp);
             }
             lastDoorStatus = data.status;
         }
@@ -203,16 +112,16 @@ database.ref('/sensor').on('value', (snap) => {
         const doorText = document.getElementById('door-text');
         const doorIcon = document.getElementById('door-icon');
         const doorCard = document.getElementById('door-card');
-    
+
         if (doorText && doorIcon && doorCard) {
-            if(data.status === "OPENED") {
+            if (data.status === "OPENED") {
                 doorText.innerText = "DOOR OPENED";
                 doorIcon.className = "fas fa-door-open";
                 doorCard.style.color = "#ff4d6d";
                 doorCard.style.background = "rgba(255, 77, 109, 0.1)";
-           } else {
-                doorText.innerText = "DOOR CLOSED"; // Boleh ganti teks jadi CLOSED atau tetap LOCKED
-                doorIcon.className = "fas fa-door-closed"; // <--- ICON BARU
+            } else {
+                doorText.innerText = "DOOR CLOSED";
+                doorIcon.className = "fas fa-door-closed";
                 doorCard.style.color = "#06d6a0";
                 doorCard.style.background = "rgba(6, 214, 160, 0.1)";
             }
@@ -222,120 +131,32 @@ database.ref('/sensor').on('value', (snap) => {
     }
 });
 
-// --- 6. CONTROL & CONFIG ---
-// Pelacak ACK: web menunggu balasan perangkat lewat /control/command_result
-let pendingCommand = null;
-let pendingCommandTimer = null;
-
-// Siapkan pelacak ACK (perangkat poll Firebase tiap ~10s, timeout 15s)
-function armCommandAck(cmd) {
-    pendingCommand = { cmd: cmd };
-    if (pendingCommandTimer) clearTimeout(pendingCommandTimer);
-    pendingCommandTimer = setTimeout(() => {
-        pendingCommand = null;
-        Swal.fire({
-            title: 'Perangkat tidak merespon',
-            text: 'Perintah sudah terkirim, tapi belum ada balasan dari perangkat (mungkin offline).',
-            icon: 'error'
-        });
-    }, 15000);
-}
-
-// Listener ACK dari perangkat (mengikuti pola /control/voice_test_result)
-database.ref('/control/command_result').on('value', (snap) => {
-    const r = snap.val();
-    if (r && r.status === 'success' && pendingCommand && r.cmd === pendingCommand.cmd) {
-        clearTimeout(pendingCommandTimer);
-        pendingCommand = null;
-        Swal.fire({ title: 'Berhasil Diterima Perangkat!', icon: 'success', timer: 1500, showConfirmButton: false });
-    }
-});
-
-function sendCommand(cmd, title, text) {
-    Swal.fire({ 
-        title: title, text: text, icon: 'question', 
-        showCancelButton: true, confirmButtonColor: '#4361ee',
-        // Hapus background gelap agar ikut tema putih default
-    }).then((r) => {
-        if (r.isConfirmed) {
-            armCommandAck(cmd);
-
-            Swal.fire({ title: 'Mohon Tunggu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-            database.ref('/control/command').set(cmd).catch(() => {
-                if (pendingCommandTimer) clearTimeout(pendingCommandTimer);
-                pendingCommand = null;
-                Swal.fire({ title: 'Gagal mengirim perintah', icon: 'error' });
-            });
-
-            // Log Manual ke History (Pending Queue)
-            const now = new Date();
-            let aksiStr = "Command Web";
-            if(cmd==1) aksiStr="Buka Pintu (Web)";
-            if(cmd==3) aksiStr="Test Adzan (Web)";
-            if(cmd==5) aksiStr="Test Sahur (Web)"; // LOG BARU
-            if(cmd==4) aksiStr="Stop Audio (Web)";
-            if(cmd==8) aksiStr="Test Tarhim (Web)";
-
-            // A. Ambil teks suhu asli (Misal: "27.5 °C")
-            // REVISI: Gunakan data dari variabel global agar lebih akurat & tidak bergantung UI
-            let rawTemp = currentSensorData.temperature || 0;
-            // Pastikan angka desimal presisi (misal 27.56 jadi 27.6) dan tetap bertipe Number
-            let cleanTemp = Number(Math.round(rawTemp + "e1") + "e-1") || rawTemp;
-
-            const logData = {
-                waktu: now.toLocaleTimeString('en-GB', { hour12: false }),
-                status: aksiStr,
-                suhu: cleanTemp
-            };
-            database.ref('/logs_pending').push(logData);
-        }
-    });
-}
-
-// --- KONFIGURASI VERSI (anti-konflik Firebase online vs web offline) ---
-let cfgVersion = 0;
-function bumpConfigVersion() {
-    const now = Math.floor(Date.now() / 1000);
-    cfgVersion = now > cfgVersion ? now : cfgVersion + 1;
-    return cfgVersion;
-}
-
-function updateConfig(path, val) {
-    const upd = {};
-    upd[path] = val;
-    upd.ver = bumpConfigVersion();
-    database.ref('/config').update(upd);
-}
-
-// Listener Config (Safe Mode)
+// --- 4. LISTENER CONFIG (SAFE MODE) ---
 database.ref('/config').on('value', (snap) => {
     const config = snap.val() || {};
-    
+
     const swAlert = document.getElementById('switch-alert');
     const swAdzan = document.getElementById('switch-adzan');
     const swSec = document.getElementById('switch-security');
-    const swAccess = document.getElementById('switch-access'); // Tambahkan ini
+    const swAccess = document.getElementById('switch-access');
     const swVoice = document.getElementById('switch-voice');
-    
+
     // --- FITUR RAMADHAN: Switch Alarm Sahur ---
-    injectSahurSwitch(); 
+    injectSahurSwitch();
     const swSahur = document.getElementById('switch-sahur');
     if (swSahur) swSahur.checked = config.sahurAlarmMode || false;
 
     const statusText = document.getElementById('access-status-text');
-    
+
     if (swAlert) swAlert.checked = config.alertMode || false;
     if (swAdzan) swAdzan.checked = config.adzanAuto || false;
     if (swSec) swSec.checked = config.securityMode || false;
 
-    // Update Switch Voice Jam
     if (swVoice) {
         swVoice.checked = config.voiceJamEnabled || false;
         updateVoiceUiState(swVoice.checked);
     }
-    
-    // Update Switch Disable Access
+
     if (swAccess) {
         swAccess.checked = config.accessCardDisabled || false;
         if (statusText) {
@@ -361,136 +182,15 @@ function injectSahurSwitch() {
                 <span class="slider"></span>
             </label>
         `;
-        // Sisipkan sebelum tombol akses/security
-        const ref = container.querySelector('.switch-group'); 
-        if(ref) container.insertBefore(div, ref);
+        const ref = container.querySelector('.switch-group');
+        if (ref) container.insertBefore(div, ref);
     }
-}
-
-function loadSheet() {
-    const iframe = document.getElementById('sheet-frame');
-    const cover = document.getElementById('sheet-cover');
-    
-    // 1. Ambil URL asli
-    const url = iframe.getAttribute('data-src'); 
-    
-    // 2. Masukkan ke SRC agar mulai loading
-    iframe.src = url;
-
-    // 3. Efek Loading Sederhana
-    cover.innerHTML = '<div style="color:#107c41"><i class="fas fa-spinner fa-spin fa-2x"></i><br>Mengambil Data...</div>';
-    
-    // 4. Hilangkan cover setelah 2 detik (estimasi loading selesai)
-    setTimeout(() => {
-        cover.style.opacity = '0'; // Efek fade out
-        setTimeout(() => {
-            cover.style.display = 'none'; // Hilang total
-        }, 500);
-    }, 2000);
-}
-
-// Konfigurasi Sheet
-const SHEET_ID = '1sY__Jbcj_fwcG3enQwQ9KNNvRpjzBLXE475j2MM6BMg';
-const SHEET_GID = '0'; 
-const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`;
-
-function loadNativeTable() {
-    // 1. Ubah Tampilan UI (Loading Mode)
-    const btn = document.getElementById('btn-load');
-    const loadMsg = document.getElementById('loading-msg');
-    const tableArea = document.querySelector('.table-scroll-area'); // Target scroll
-    const cover = document.getElementById('sheet-cover');
-    
-    if (btn) btn.style.display = 'none'; 
-    if (loadMsg) loadMsg.style.display = 'block';
-    
-    // Tampilkan cover loading jika ada
-    if (cover) {
-        cover.style.display = 'flex';
-        cover.style.opacity = '1';
-    }
-
-    // 2. Ambil Data dari Google Sheets
-    fetch(QUERY_URL)
-    .then(response => response.text())
-    .then(text => {
-        const jsonText = text.substr(47).slice(0, -2);
-        const json = JSON.parse(jsonText);
-        
-        const cols = json.table.cols;
-        const rows = json.table.rows;
-
-        // Render Header
-        let headerHtml = '';
-        cols.forEach(col => {
-            headerHtml += `<th>${col ? col.label : ''}</th>`;
-        });
-        document.getElementById('table-head').innerHTML = headerHtml;
-
-        // Render Body
-        let bodyHtml = '';
-        rows.forEach(row => {
-            bodyHtml += '<tr>';
-            for (let i = 0; i < cols.length; i++) {
-                const cell = row.c[i];
-                let displayValue = '';
-
-                if (cell) {
-                    if (cell.v !== null) {
-                        let raw = String(cell.v); 
-                        if (raw.includes("Date(")) {
-                            let nums = raw.match(/\d+/g); 
-                            if (nums) {
-                                let thn = parseInt(nums[0]);
-                                if (thn === 1899 && nums.length >= 6) { 
-                                    displayValue = `${nums[3].padStart(2,'0')}:${nums[4].padStart(2,'0')}:${nums[5].padStart(2,'0')}`; 
-                                } else if (thn > 1900 && nums.length >= 3) { 
-                                    displayValue = `${nums[2].padStart(2,'0')}/${(parseInt(nums[1])+1).toString().padStart(2,'0')}/${nums[0]}`;
-                                }
-                            }
-                        } else {
-                            displayValue = cell.f || cell.v;
-                        }
-                    }
-                }
-                bodyHtml += `<td>${displayValue}</td>`;
-            }
-            bodyHtml += '</tr>';
-        });
-        document.getElementById('table-body').innerHTML = bodyHtml;
-
-        // --- FITUR AUTO-SCROLL KE BAWAH ---
-        // Gunakan setTimeout agar scroll berjalan setelah tabel selesai dirender browser
-        setTimeout(() => {
-            if (tableArea) {
-                tableArea.scrollTo({
-                    top: tableArea.scrollHeight,
-                    behavior: 'smooth' // Scroll halus ke paling bawah
-                });
-            }
-        }, 300);
-
-        // 3. Selesai: Hilangkan Loading UI
-        if (loadMsg) loadMsg.style.display = 'none';
-        if (cover) {
-            cover.style.opacity = '0';
-            setTimeout(() => { cover.style.display = 'none'; }, 500);
-        }
-
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        if (loadMsg) loadMsg.innerHTML = '<span style="color:red"><i class="fas fa-exclamation-triangle"></i> Gagal memuat data.</span>';
-        if (btn) btn.style.display = 'inline-block';
-    });
 }
 
 function toggleAccess(isDisableMode) {
-    // isDisableMode = true berarti switch ON (Disable Access Aktif)
-    const cmdID = isDisableMode ? 6 : 7; 
+    const cmdID = isDisableMode ? 6 : 7;
     const statusText = document.getElementById('access-status-text');
 
-    // 1. Siapkan pelacak ACK + kirim perintah ke perangkat via Firebase
     armCommandAck(cmdID);
     Swal.fire({ title: 'Mohon Tunggu...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     database.ref('/control/command').set(cmdID).catch(() => {
@@ -499,18 +199,16 @@ function toggleAccess(isDisableMode) {
         Swal.fire({ title: 'Gagal mengirim perintah', icon: 'error' });
     });
 
-    // 2. Simpan status ke config agar UI sinkron (dengan versi anti-konflik)
     const upd = { accessCardDisabled: isDisableMode, ver: bumpConfigVersion() };
     database.ref('/config').update(upd);
 
-    // 3. Update teks bantuan
     if (statusText) {
         statusText.innerText = isDisableMode ? "Sensor kartu sedang DIMATIKAN" : "Sensor kartu sedang AKTIF";
         statusText.style.color = isDisableMode ? "#ff4d6d" : "#666";
     }
 }
 
-// --- FITUR VOICE JAM TESTER (via Firebase) ---
+// --- 5. FITUR VOICE JAM TESTER (via Firebase) ---
 function updateVoiceUiState(enabled) {
     const txt = document.getElementById('voice-enable-txt');
     const jamSel = document.getElementById('voice-jam');
@@ -542,7 +240,6 @@ function playVoiceJam() {
     if (btn) { btn.disabled = true; btn.innerText = '⏳ Memutar...'; }
     if (st) { st.style.color = '#636e72'; st.innerText = 'Mengirim voice jam ' + jam + ' ' + document.getElementById('voice-waktu').selectedOptions[0].innerText + '...'; }
 
-    // Reset hasil lama, kirim kode paket: jam*10 + waktuId (1=pagi 2=siang 3=sore 4=malam)
     database.ref('/control/voice_test_result').set('')
         .then(() => database.ref('/control/voice_test').set(jam * 10 + waktuId))
         .catch(() => {
@@ -572,28 +269,6 @@ function stopVoiceJam() {
     database.ref('/control/command').set(4)
         .then(() => { if (st) { st.innerText = 'Stop audio terkirim.'; st.style.color = '#06d6a0'; } })
         .catch(() => { if (st) { st.innerText = 'Gagal mengirim stop.'; st.style.color = '#ff4d6d'; } });
-}
-
-// --- RESTART DEVICE (via Firebase) ---
-function restartDevice() {
-    Swal.fire({
-        title: 'Restart Perangkat?',
-        text: 'Perangkat akan reboot dalam beberapa detik.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ff4757',
-        confirmButtonText: 'Ya, Restart',
-        cancelButtonText: 'Batal'
-    }).then((r) => {
-        if (r.isConfirmed) {
-            database.ref('/control/restart').set(1);
-            Swal.fire({
-                icon: 'info', title: 'Restarting...',
-                text: 'Mohon Tunggu reboot (sekitar 10-30 detik).',
-                showConfirmButton: false, timer: 10000
-            });
-        }
-    });
 }
 
 // inisialisasi state UI voice jam saat halaman dimuat
