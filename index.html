@@ -19,10 +19,13 @@
             <i class="fas fa-shield-alt"></i> iSmartLock
         </div>
         <ul class="sidebar-menu">
-            <li onclick="showPage('dashboard')" class="active-menu" id="menu-dash">
+            <li class="active-menu" id="menu-dash">
                 <i class="fas fa-home"></i> Dashboard
             </li>
-            <li onclick="showPage('history')" id="menu-hist">
+            <li onclick="location.href='setup.html'" id="menu-setup">
+                <i class="fas fa-sliders-h"></i> Setup
+            </li>
+            <li onclick="location.href='log.html'" id="menu-log">
                 <i class="fas fa-table"></i> Log History
             </li>
         </ul>
@@ -185,59 +188,9 @@
             </button>
         </div>
 
-        <div id="page-history" class="page-section" style="display:none;">
-            <div class="main-panel" style="min-height: 600px;">
-                <h3 style="color:var(--primary); margin-bottom:15px;">
-                    <i class="fas fa-history"></i> Riwayat Akses
-                </h3>
-                
-                <p style="font-size:0.8rem; color:#aaa; margin-bottom:20px;">
-                    Data ini disinkronisasi otomatis dari Firebase ke Google Spreadsheet setiap 1 menit.
-                </p>
-
-                <a href="https://docs.google.com/spreadsheets/d/1sY__Jbcj_fwcG3enQwQ9KNNvRpjzBLXE475j2MM6BMg/edit" id="btn-open-sheet" target="_blank" class="btn-unlock btn-google-sheet">
-                    <i class="fas fa-external-link-alt"></i> 
-                    <span>BUKA GOOGLE SHEET</span>
-                </a>
-
-                <div class="sheet-container">
-                    
-                    <div id="sheet-cover">
-                        <div class="cover-content">
-                            <i class="fas fa-database" style="font-size: 3rem; color: #107c41; margin-bottom: 15px;"></i>
-                            <h3>Data Log History</h3>
-                            <p>Klik tombol di bawah untuk memuat data terbaru dari server.</p>
-                            
-                            <button id="btn-load" onclick="loadNativeTable()" class="btn-unlock" 
-                                style="display: block; margin: 10px auto; width: fit-content; padding: 10px 40px;">
-                                
-                                <i class="fas fa-sync-alt"></i> TAMPILKAN TABEL
-
-                            </button>
-                            
-                            <div id="loading-msg" style="display:none; margin-top:15px; color:#107c41; font-weight:bold;">
-                                <i class="fas fa-spinner fa-spin"></i> Sedang mengambil data...
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="table-scroll-area">
-                        <table class="custom-table">
-                            <thead>
-                                <tr id="table-head">
-                                    </tr>
-                            </thead>
-                            <tbody id="table-body">
-                                </tbody>
-                        </table>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-
     </div>
     
+    <script src="shared.js"></script>
     <script src="script.js"></script>
 
 </body>
