@@ -11,8 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 
-    <style>
-        .setup-section { border-top: 1px solid var(--glass-border); padding: 16px 0; }
+    <style>        .setup-section { border-top: 1px solid var(--glass-border); padding: 16px 0; }
         .setup-section:first-of-type { border-top: none; }
         .setup-section h4 { color: #000; margin: 0 0 3px; font-size: 1rem; font-weight: 800; }
         .setup-section h4 i { color: var(--primary); }
@@ -114,6 +113,13 @@
                     <div class="setup-row"><label>Sebelum adzan (menit)</label><input type="number" id="adzanBeforeMin" min="1" max="60"></div>
                     <div class="setup-row"><label>Sesudah adzan (menit)</label><input type="number" id="adzanAfterMin" min="0.5" max="30" step="0.5"></div>
                     <div class="setup-row"><label>Sesudah tarhim (menit)</label><input type="number" id="tarhimAfterMin" min="1" max="30"></div>
+                </div>
+
+                <div class="setup-section">
+                    <h4><i class="fas fa-clock"></i> Rentang Voice Jam Otomatis</h4>
+                    <span class="hint">Format jam 24 (0-23), inklusif. Boleh melintang tengah malam, misal 22 sampai 5. Berlaku untuk voice jam otomatis; tombol PLAY VOICE di dashboard tetap bisa dipakai kapan saja.</span>
+                    <div class="setup-row"><label>Mulai jam (0-23)</label><input type="number" id="voiceJamFromHour" min="0" max="23" step="1"></div>
+                    <div class="setup-row"><label>Sampai jam (0-23)</label><input type="number" id="voiceJamToHour" min="0" max="23" step="1"></div>
                 </div>
 
                 <div class="setup-section">
