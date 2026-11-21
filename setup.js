@@ -7,6 +7,7 @@ const TUNABLE_DEFAULTS = {
     durAdzanMs: 270000, durTarhimMs: 300000, durSahurMs: 300000,
     tempAlertC: 28.8, tarhimOffsetSec: 310, sahurOffsetMin: 70,
     adzanBeforeSec: 600, adzanAfterSec: 300, tarhimAfterSec: 360,
+    voiceJamFromHour: 0, voiceJamToHour: 23,
     fbIntervalMs: 10000, syncIntervalMs: 86400000
 };
 
@@ -39,6 +40,8 @@ function populate(cfg) {
     setVal('adzanBeforeMin', Number((src.adzanBeforeSec / 60).toFixed(2)));
     setVal('adzanAfterMin', Number((src.adzanAfterSec / 60).toFixed(2)));
     setVal('tarhimAfterMin', Number((src.tarhimAfterSec / 60).toFixed(2)));
+    setVal('voiceJamFromHour', src.voiceJamFromHour);
+    setVal('voiceJamToHour', src.voiceJamToHour);
     setVal('fbIntervalSec', Number((src.fbIntervalMs / 1000).toFixed(0)));
     setVal('syncIntervalHrs', Number((src.syncIntervalMs / 3600000).toFixed(2)));
 }
@@ -57,12 +60,19 @@ function collect() {
         ['durAdzanMin', 1, 15], ['durTarhimMin', 1, 15], ['durSahurMin', 1, 15],
         ['tempAlertC', 10, 60], ['tarhimOffsetSec', 60, 3600], ['sahurOffsetMin', 10, 180],
         ['adzanBeforeMin', 1, 60], ['adzanAfterMin', 0.5, 30], ['tarhimAfterMin', 1, 30],
+        ['voiceJamFromHour', 0, 23], ['voiceJamToHour', 0, 23],
         ['fbIntervalSec', 5, 300], ['syncIntervalHrs', 1, 48]
     ];
     for (const [id, lo, hi] of checks) {
         const x = v(id);
         if (isNaN(x) || x < lo || x > hi) {
             Swal.fire({ icon: 'error', title: 'Nilai tidak valid', text: `Kolom "${id}" harus antara ${lo} dan ${hi}.` });
+            return null;
+        }
+    }
+    for (const id of ['voiceJamFromHour', 'voiceJamToHour']) {
+        if (!Number.isInteger(v(id))) {
+            Swal.fire({ icon: 'error', title: 'Jam harus bilangan bulat', text: `Kolom "${id}" harus berupa jam 0-23 tanpa desimal.` });
             return null;
         }
     }
@@ -81,6 +91,8 @@ function collect() {
         adzanBeforeSec: Math.round(v('adzanBeforeMin') * 60),
         adzanAfterSec: Math.round(v('adzanAfterMin') * 60),
         tarhimAfterSec: Math.round(v('tarhimAfterMin') * 60),
+        voiceJamFromHour: Math.round(v('voiceJamFromHour')),
+        voiceJamToHour: Math.round(v('voiceJamToHour')),
         fbIntervalMs: Math.round(v('fbIntervalSec') * 1000),
         syncIntervalMs: Math.round(v('syncIntervalHrs') * 3600000)
     };
